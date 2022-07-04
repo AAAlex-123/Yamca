@@ -7,7 +7,10 @@ import java.util.Map;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Packet;
+import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
+import eventDeliverySystem.filesystem.FileSystemException;
+import eventDeliverySystem.filesystem.TopicFileSystem;
 
 /**
  * An extension of the Abstract Topic that stores data as required by Brokers.
@@ -24,20 +27,20 @@ class BrokerTopic extends AbstractTopic {
 		dummyPostInfo = new PostInfo(null, null, AbstractTopic.FETCH_ALL_POSTS);
 	}
 
-	private final List<PostInfo>          postInfoList;
-	private final Map<Long, List<Packet>> packetsPerPostInfoMap;
-	private final Map<Long, Integer>      indexPerPostInfoId;
+	private final TopicFileSystem tfs;
+
+	private final List<PostInfo>          postInfoList = new LinkedList<>();
+	private final Map<Long, List<Packet>> packetsPerPostInfoMap = new HashMap<>();
+	private final Map<Long, Integer>      indexPerPostInfoId = new HashMap<>();
 
 	/**
 	 * Constructs an empty BrokerTopic.
 	 *
 	 * @param name the name of the new BrokerTopic
 	 */
-	public BrokerTopic(String name) {
+	public BrokerTopic(String name, TopicFileSystem tfs) {
 		super(name);
-		postInfoList = new LinkedList<>();
-		packetsPerPostInfoMap = new HashMap<>();
-		indexPerPostInfoId = new HashMap<>();
+		this.tfs = tfs;
 
 		postInfoList.add(dummyPostInfo);
 		indexPerPostInfoId.put(AbstractTopic.FETCH_ALL_POSTS, 0);
@@ -104,6 +107,15 @@ class BrokerTopic extends AbstractTopic {
 			final List<Packet> ls = packetsPerPostInfoMap.get(id);
 			emptyPacketsPerPostInfoMap.put(id, ls.toArray(new Packet[ls.size()]));
 		}
+	}
+
+	public void savePostToTFS(long postId) throws FileSystemException {
+		PostInfo pi = postInfoList.get(indexPerPostInfoId.get(postId));
+		final List<Packet> ls = packetsPerPostInfoMap.get(postId);
+		Packet[] packets = ls.toArray(new Packet[ls.size()]);
+
+		Post post = Post.fromPackets(packets, pi);
+		tfs.writePost(post, getName());
 	}
 
 	@Override

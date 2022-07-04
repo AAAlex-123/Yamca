@@ -28,6 +28,7 @@ import eventDeliverySystem.thread.PushThread;
 import eventDeliverySystem.thread.PushThread.Protocol;
 import eventDeliverySystem.util.LG;
 import eventDeliverySystem.util.PortManager;
+import eventDeliverySystem.util.Subscriber;
 
 /**
  * A remote component that forms the backbone of the EventDeliverySystem.
@@ -63,7 +64,7 @@ public class Broker implements Runnable, AutoCloseable {
 		btm = new BrokerTopicManager(topicsRootDirectory);
 
 		try {
-			clientRequestSocket = new ServerSocket(PortManager.getNewAvailablePort(),
+			clientRequestSocket = new ServerSocket(29621, // PortManager.getNewAvailablePort(),
 			        Broker.MAX_CONNECTIONS);
 			brokerRequestSocket = new ServerSocket(PortManager.getNewAvailablePort(),
 			        Broker.MAX_CONNECTIONS);
@@ -200,6 +201,7 @@ public class Broker implements Runnable, AutoCloseable {
 					BrokerTopic topic = getTopic(topicName);
 					new PullThread(ois, topic).run();
 
+					oos.flush();
 					socket.close();
 					LG.out();
 					break;
@@ -240,6 +242,7 @@ public class Broker implements Runnable, AutoCloseable {
 					LG.in();
 					new BrokerDiscoveryThread(oos, topicName).run();
 
+					oos.flush();
 					socket.close();
 					LG.out();
 					break;
@@ -249,15 +252,40 @@ public class Broker implements Runnable, AutoCloseable {
 					String topicName = (String) message.getValue();
 					LG.sout("CREATE_TOPIC '%s'", topicName);
 					LG.in();
-
 					final boolean topicExists = topicExists(topicName);
 
 					LG.sout("topicExists=%s", topicExists);
-					if (!topicExists)
-						addTopic(topicName);
+					final boolean success;
+					if (topicExists) {
+						success = false;
+					} else {
+						success = addTopic(topicName);
+					}
 
-					oos.writeBoolean(!topicExists);
+					if (success) {
+						BrokerTopic bt = getTopic(topicName);
+						bt.subscribe(new Subscriber() {
+							@Override
+							public void notify(PostInfo postInfo, String topicName) {
+								;
+							}
 
+							@Override
+							public void notify(Packet packet, String topicName) {
+								if (packet.isFinal()) {
+									try {
+										bt.savePostToTFS(packet.getPostId());
+									} catch (FileSystemException e) {
+										close();
+									}
+								}
+							}
+						});
+					}
+
+					oos.writeBoolean(success);
+
+					oos.flush();
 					socket.close();
 					LG.out();
 					break;
