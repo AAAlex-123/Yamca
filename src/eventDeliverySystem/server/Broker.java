@@ -6,6 +6,7 @@ import java.io.ObjectOutputStream;
 import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -20,6 +21,8 @@ import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.datastructures.Topic.TopicToken;
+import eventDeliverySystem.filesystem.FileSystemException;
+import eventDeliverySystem.filesystem.TopicFileSystem;
 import eventDeliverySystem.thread.PullThread;
 import eventDeliverySystem.thread.PushThread;
 import eventDeliverySystem.thread.PushThread.Protocol;
@@ -51,6 +54,10 @@ public class Broker implements Runnable, AutoCloseable {
 	/**
 	 * Create a new leader broker. This is necessarily the first step to initialize
 	 * the server network.
+	 *
+	 * @param topicsRootDirectory the directory where this Broker's Topics will be saved
+	 *
+	 * @throws FileSystemException if the path given does not correspond to an existing directory
 	 */
 	public Broker(Path topicsRootDirectory) throws FileSystemException {
 		btm = new BrokerTopicManager(topicsRootDirectory);
@@ -72,14 +79,16 @@ public class Broker implements Runnable, AutoCloseable {
 	/**
 	 * Create a non-leader broker and connect it to the server network.
 	 *
+	 * @param topicsRootDirectory the directory where this Broker's Topics will be saved
 	 * @param leaderIP   the IP of the leader broker
 	 * @param leaderPort the port of the leader broker
 	 *
 	 * @throws UncheckedIOException if the connection to the leader broker fails
+	 * @throws FileSystemException if the path given does not correspond to an existing directory
 	 */
 	@SuppressWarnings("resource")
-	public Broker(String leaderIP, int leaderPort) {
-		this();
+	public Broker(Path topicsRootDirectory, String leaderIP, int leaderPort) throws FileSystemException {
+		this(topicsRootDirectory);
 		try {
 			final Socket leaderConnection = new Socket(leaderIP, leaderPort);
 
