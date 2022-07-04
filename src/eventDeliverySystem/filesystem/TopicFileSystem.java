@@ -38,8 +38,15 @@ public class TopicFileSystem {
 	 *
 	 * @param topicsRootDirectory the root directory of the new file system whose
 	 *                            sub-directories correspond to different Topics
+	 *
+	 * @throws FileSystemException if the path given does not correspond to an existing directory
 	 */
-	public TopicFileSystem(Path topicsRootDirectory) {
+	public TopicFileSystem(Path topicsRootDirectory) throws FileSystemException {
+		if (!Files.exists(topicsRootDirectory)) {
+			throw new FileSystemException(
+					topicsRootDirectory, new IOException("Directory does not exist"));
+		}
+
 		this.topicsRootDirectory = topicsRootDirectory;
 	}
 

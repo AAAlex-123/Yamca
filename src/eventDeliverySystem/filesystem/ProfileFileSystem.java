@@ -19,7 +19,7 @@ import eventDeliverySystem.datastructures.Topic;
 public class ProfileFileSystem {
 
 	private final Path                         profilesRootDirectory;
-	private final Map<String, TopicFileSystem> topicFileSystemMap;
+	private final Map<String, TopicFileSystem> topicFileSystemMap = new HashMap<>();
 
 	private String currentProfileName;
 
@@ -33,12 +33,22 @@ public class ProfileFileSystem {
 	 *                             file system
 	 */
 	public ProfileFileSystem(Path profilesRootDirectory) throws FileSystemException {
+		if (!Files.exists(profilesRootDirectory)) {
+			throw new FileSystemException(
+					profilesRootDirectory, new IOException("Directory does not exist"));
+		}
+
 		this.profilesRootDirectory = profilesRootDirectory;
-		topicFileSystemMap = new HashMap<>();
 
 		getProfileNames().forEach(profileName -> {
-			final TopicFileSystem tfs = new TopicFileSystem(getTopicsDirectory(profileName));
-			topicFileSystemMap.put(profileName, tfs);
+			try {
+				final Path topicDirectory = getTopicsDirectory(profileName);
+				final TopicFileSystem tfs = new TopicFileSystem(topicDirectory);
+				topicFileSystemMap.put(profileName, tfs);
+			} catch (FileSystemException e) {
+				// cannot be thrown since the path is taken from running 'ls'
+				throw new RuntimeException("This should never happen");
+			}
 		});
 	}
 
