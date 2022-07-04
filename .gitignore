@@ -20,5 +20,6 @@
 *.prefs
 
 # App files
-users/
 assets/
+brokers/
+users/
