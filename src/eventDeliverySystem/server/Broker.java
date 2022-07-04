@@ -38,13 +38,12 @@ public class Broker implements Runnable, AutoCloseable {
 
 	private static final int MAX_CONNECTIONS = 64;
 
-	private final Map<String, Set<ObjectOutputStream>> consumerOOSPerTopic;
-	private final Map<String, BrokerTopic>             topicsByName;
+	private final BrokerTopicManager btm;
 
 	// no need to synchronise because these practically immutable after startup
 	// since no new broker can be constructed after startup
-	private final List<Socket>         brokerConnections;
-	private final List<ConnectionInfo> brokerCI;
+	private final List<Socket>         brokerConnections = new LinkedList<>();
+	private final List<ConnectionInfo> brokerCI = new LinkedList<>();
 
 	private final ServerSocket clientRequestSocket;
 	private final ServerSocket brokerRequestSocket;
@@ -53,11 +52,8 @@ public class Broker implements Runnable, AutoCloseable {
 	 * Create a new leader broker. This is necessarily the first step to initialize
 	 * the server network.
 	 */
-	public Broker() {
-		consumerOOSPerTopic = new HashMap<>();
-		brokerConnections = new LinkedList<>();
-		brokerCI = new LinkedList<>();
-		topicsByName = new HashMap<>();
+	public Broker(Path topicsRootDirectory) throws FileSystemException {
+		btm = new BrokerTopicManager(topicsRootDirectory);
 
 		try {
 			clientRequestSocket = new ServerSocket(PortManager.getNewAvailablePort(),
@@ -142,15 +138,15 @@ public class Broker implements Runnable, AutoCloseable {
 	@Override
 	public synchronized void close() {
 		try {
-			for (final Set<ObjectOutputStream> consumerOOSSet : consumerOOSPerTopic.values())
-				for (final ObjectOutputStream consumerOOS : consumerOOSSet)
-					consumerOOS.close();
+			btm.close();
 
 			for (final Socket brokerSocket : brokerConnections)
 				brokerSocket.close();
 
 		} catch (final IOException ioe) {
 			ioe.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -272,37 +268,24 @@ public class Broker implements Runnable, AutoCloseable {
 		}
 
 		private boolean topicExists(String topicName) {
-			synchronized (topicsByName) {
-				return topicsByName.containsKey(topicName);
-			}
+			return btm.topicExists(topicName);
 		}
 
-		private BrokerTopic getTopic(String topicName) {
-			final BrokerTopic topic;
-			synchronized (topicsByName) {
-				topic = topicsByName.get(topicName);
-			}
-
-			if (topic == null)
-				throw new NoSuchElementException("There is no Topic with name " + topicName);
-
-			return topic;
+		private BrokerTopic getTopic(String topicName) throws NoSuchElementException {
+			return btm.getTopic(topicName);
 		}
 
-		private void addTopic(String topicName) {
-			synchronized (topicsByName) {
-				topicsByName.put(topicName, new BrokerTopic(topicName));
-			}
-
-			synchronized (consumerOOSPerTopic) {
-				consumerOOSPerTopic.put(topicName, new HashSet<>());
+		private boolean addTopic(String topicName) {
+			try {
+				btm.addTopic(topicName);
+				return true;
+			} catch (FileSystemException e) {
+				return false;
 			}
 		}
 
 		private void registerConsumer(String topicName, ObjectOutputStream oos) {
-			synchronized (consumerOOSPerTopic) {
-				consumerOOSPerTopic.get(topicName).add(oos);
-			}
+			btm.registerConsumer(topicName, oos);
 		}
 	}
 
