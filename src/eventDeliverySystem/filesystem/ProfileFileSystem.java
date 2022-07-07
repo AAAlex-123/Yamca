@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
+import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.Topic;
 
@@ -111,8 +112,8 @@ public class ProfileFileSystem {
 		final Profile profile = new Profile(profileName);
 
 		final TopicFileSystem tfs = getTopicFileSystemForCurrentUser();
-		for (final Topic topic : tfs.readAllTopics())
-			profile.addTopic(topic);
+		for (final AbstractTopic abstractTopic : tfs.readAllTopics())
+			profile.addTopic(new Topic(abstractTopic));
 
 		return profile;
 	}

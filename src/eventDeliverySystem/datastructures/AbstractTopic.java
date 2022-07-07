@@ -22,6 +22,16 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	/** Constant to be used when no post exists and an ID is needed */
 	public static final long FETCH_ALL_POSTS = -1L;
 
+	public static AbstractTopic createSimple(String name, List<Post> posts) {
+		AbstractTopic simple = new SimpleTopic(name);
+		posts.forEach(post -> {
+			simple.post(post.getPostInfo());
+			for (Packet packet : Packet.fromPost(post))
+				simple.post(packet);
+		});
+		return simple;
+	}
+
 	private final String          name;
 	private final Set<Subscriber> subscribers;
 
@@ -157,5 +167,44 @@ public abstract class AbstractTopic implements Iterable<Post> {
 			return false;
 		final AbstractTopic other = (AbstractTopic) obj;
 		return Objects.equals(name, other.name); // same name == same Topic, can't have duplicate names
+	}
+
+	private static class SimpleTopic extends AbstractTopic {
+
+		private final List<Post> posts = new LinkedList<>();
+
+		public SimpleTopic(String name) {
+			super(name);
+		}
+
+		private PostInfo currPI;
+		private final List<Packet> currPackets = new LinkedList<>();
+
+		@Override
+		public void postHook(PostInfo postInfo) {
+			if (!currPackets.isEmpty() || (currPI != null))
+				throw new IllegalStateException("Received PostInfo while more Packets remain");
+
+			currPI = postInfo;
+		}
+
+		@Override
+		public void postHook(Packet packet) {
+			currPackets.add(packet);
+
+			if (packet.isFinal()) {
+				final Packet[] data          = currPackets.toArray(new Packet[currPackets.size()]);
+				final Post     completedPost = Post.fromPackets(data, currPI);
+				posts.add(completedPost);
+
+				currPackets.clear();
+				currPI = null;
+			}
+		}
+
+		@Override
+		public Iterator<Post> iterator() {
+			return posts.iterator();
+		}
 	}
 }

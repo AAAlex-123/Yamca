@@ -138,7 +138,7 @@ public class TopicFileSystem {
 	 * @throws FileSystemException if an I/O error occurs while interacting with the
 	 *                             file system
 	 */
-	public Topic readTopic(String topicName) throws FileSystemException {
+	public AbstractTopic readTopic(String topicName) throws FileSystemException {
 		final List<Post> loadedPosts = new LinkedList<>();
 
 		final Path firstPost = getFirstPost(topicName);
@@ -150,7 +150,7 @@ public class TopicFileSystem {
 			loadedPosts.add(loadedPost);
 		}
 
-		return new Topic(topicName, loadedPosts);
+		return AbstractTopic.createSimple(topicName, loadedPosts);
 	}
 
 	/**
@@ -161,8 +161,8 @@ public class TopicFileSystem {
 	 * @throws FileSystemException if an I/O error occurs while interacting with the
 	 *                             file system
 	 */
-	public Collection<Topic> readAllTopics() throws FileSystemException {
-		final Set<Topic> topics = new HashSet<>();
+	public Collection<AbstractTopic> readAllTopics() throws FileSystemException {
+		final Set<AbstractTopic> topics = new HashSet<>();
 
 		for (Iterator<String> iter = getTopicNames().iterator(); iter.hasNext();)
 			topics.add(readTopic(iter.next()));
