@@ -201,16 +201,23 @@ public class User {
 	 *
 	 * @param topicName the name of the Topic to listen for
 	 *
+	 * @return {@code true} if the User successfully started listening to the Topic, {@code false}
+	 *         otherwise
+	 *
 	 * @throws ServerException          if the connection to the server fails
 	 * @throws FileSystemException      if an I/O error occurs while interacting
 	 *                                  with the file system
 	 * @throws NullPointerException     if topic == null
 	 * @throws IllegalArgumentException if a Topic with the same name already exists
 	 */
-	public void listenForNewTopic(String topicName) throws ServerException, FileSystemException {
-		consumer.listenForNewTopic(topicName);
-		currentProfile.addTopic(topicName);
-		profileFileSystem.createTopic(topicName);
+	public boolean listenForNewTopic(String topicName) throws ServerException, FileSystemException {
+		boolean success = consumer.listenForNewTopic(topicName);
+		if (success) {
+			currentProfile.addTopic(topicName);
+			profileFileSystem.createTopic(topicName);
+		}
+
+		return success;
 	}
 
 	// temporary stuff because we don't have android

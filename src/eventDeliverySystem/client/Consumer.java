@@ -124,13 +124,16 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 *
 	 * @param topicName the name of the Topic to fetch from
 	 *
+	 * @return {@code true} if this Consumer successfully started listening to the Topic,
+	 *         {@code false} if no Topic with such name exists
+	 *
 	 * @throws ServerException          if a connection to the server fails
 	 * @throws IllegalArgumentException if this Consumer already listens to a Topic
 	 *                                  with the same name
 	 */
-	public void listenForNewTopic(String topicName) throws ServerException {
+	public boolean listenForNewTopic(String topicName) throws ServerException {
 		LG.sout("listenForNewTopic(%s)", topicName);
-		listenForTopic(new Topic(topicName));
+		return listenForTopic(new Topic(topicName));
 	}
 
 	/**
@@ -139,12 +142,15 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 *
 	 * @param topic Topic to fetch from
 	 *
+	 * @return {@code true} if this Consumer successfully started listening to the Topic,
+	 * 	       {@code false} if no Topic with such name exists
+	 *
 	 * @throws ServerException          if a connection to the server fails
 	 * @throws IllegalArgumentException if this Consumer already listens to a Topic
 	 *                                  with the same name
 	 */
 	@SuppressWarnings("resource") // 'socket' closes at close()
-	private void listenForTopic(Topic topic) throws ServerException {
+	private boolean listenForTopic(Topic topic) throws ServerException {
 		topic.subscribe(this);
 
 		Socket       socket    = null;
@@ -154,15 +160,24 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 
 		try {
 			socket = new Socket(ci.getAddress(), ci.getPort()); // 'socket' closes at close()
-			topicManager.addSocket(topic, socket);
 
 			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 			oos.flush();
 			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
 			oos.writeObject(new Message(INITIALISE_CONSUMER, topic.getToken()));
+			oos.flush();
 
-			new PullThread(ois, topic).start();
+			boolean success = ois.readBoolean();
+
+			if (success) {
+				topicManager.addSocket(topic, socket);
+				new PullThread(ois, topic).start();
+			} else {
+				socket.close();
+			}
+
+			return success;
 
 		} catch (final IOException e) {
 			throw new ServerException(topicName, e);
