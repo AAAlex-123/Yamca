@@ -1,5 +1,10 @@
 package eventDeliverySystem.filesystem;
 
+import eventDeliverySystem.datastructures.AbstractTopic;
+import eventDeliverySystem.datastructures.Post;
+import eventDeliverySystem.datastructures.PostInfo;
+
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,19 +18,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import eventDeliverySystem.datastructures.Post;
-import eventDeliverySystem.datastructures.PostInfo;
-import eventDeliverySystem.datastructures.Topic;
 
 /**
- * Manages Topics that are saved in directories in the file system.
+ * Manages AbstractTopics that are saved in directories in the file system.
  *
  * @author Alex Mandelias
  */
 public class TopicFileSystem {
 
 	private static final Pattern PATTERN = Pattern
-	        .compile("(?<postId>\\-?\\d+)\\-(?<posterName>\\-?\\d+)\\.(?<extension>.*)");
+	        .compile("(?<postId>-?\\d+)-(?<posterName>\\w+)\\.(?<extension>.*)");
 	private static final String  FORMAT  = "%d-%s.%s";
 
 	private static final String HEAD                 = "HEAD";
@@ -89,7 +91,7 @@ public class TopicFileSystem {
 	}
 
 	/**
-	 * Deletes a {@link Topic} from the local File System. This operation is not
+	 * Deletes an {@link AbstractTopic} from the local File System. This operation is not
 	 * atomic, meaning that if an Exception is thrown the local File System may
 	 * still contain some of the Topic's files, leaving it in an ambiguous state.
 	 *
@@ -99,9 +101,8 @@ public class TopicFileSystem {
 	 *                             file system
 	 */
 	public void deleteTopic(String topicName) throws FileSystemException {
-		final Path topicDirectory = resolveRoot(topicName);
 
-		Path currentPath = topicDirectory;
+		Path currentPath = resolveRoot(topicName);
 		try (Stream<Path> directoryStream = Files.list(currentPath)) {
 			for (Iterator<Path> iter = directoryStream.iterator(); iter.hasNext();) {
 				currentPath = iter.next();
@@ -113,7 +114,7 @@ public class TopicFileSystem {
 	}
 
 	/**
-	 * Adds a new {@link Post} to an existing {@link Topic}.
+	 * Adds a new {@link Post} to an existing {@link AbstractTopic}.
 	 *
 	 * @param post      the new Post
 	 * @param topicName the topic's name
@@ -128,7 +129,7 @@ public class TopicFileSystem {
 	}
 
 	/**
-	 * Reads a {@link Topic} from the File System and returns it.
+	 * Reads a {@link AbstractTopic} from the File System and returns it.
 	 *
 	 * @param topicName the topic's name
 	 *
@@ -237,7 +238,8 @@ public class TopicFileSystem {
 
 	// returns null if there is no next post
 	private Path getNextFile(Path postFile, String topicName) throws FileSystemException {
-		final Path pointerToNextPost = postFile.resolve(TopicFileSystem.TOPIC_META_EXTENSION);
+		final Path pointerToNextPost = new File(
+				postFile.toString() + TopicFileSystem.TOPIC_META_EXTENSION).toPath();
 
 		final byte[] pointerToNextPostContents = TopicFileSystem.read(pointerToNextPost);
 
@@ -293,14 +295,13 @@ public class TopicFileSystem {
 	private static PostInfo getPostInfoFromFileName(String fileName) {
 		final Matcher m = TopicFileSystem.PATTERN.matcher(fileName);
 
-		if (m.matches()) {
-			final long   postId        = Long.parseLong(m.group("postId"));
-			final String posterId      = m.group("posterName");
-			final String fileExtension = m.group("extension");
+		if (!m.matches())
+			throw new IllegalArgumentException("Bad filename: " + fileName);
 
-			return new PostInfo(posterId, fileExtension, postId);
-		}
+		final long   postId        = Long.parseLong(m.group("postId"));
+		final String posterId      = m.group("posterName");
+		final String fileExtension = m.group("extension");
 
-		throw new IllegalArgumentException("Bad filename: " + fileName);
+		return new PostInfo(posterId, fileExtension, postId);
 	}
 }
