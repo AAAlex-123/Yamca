@@ -1,9 +1,5 @@
 package eventDeliverySystem.server;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Packet;
@@ -11,6 +7,12 @@ import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.filesystem.FileSystemException;
 import eventDeliverySystem.filesystem.TopicFileSystem;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * An extension of the Abstract Topic that stores data as required by Brokers.
@@ -32,6 +34,15 @@ class BrokerTopic extends AbstractTopic {
 	private final List<PostInfo>          postInfoList = new LinkedList<>();
 	private final Map<Long, List<Packet>> packetsPerPostInfoMap = new HashMap<>();
 	private final Map<Long, Integer>      indexPerPostInfoId = new HashMap<>();
+
+	public BrokerTopic(AbstractTopic abstractTopic, TopicFileSystem tfs) {
+		this(abstractTopic.getName(), tfs);
+		abstractTopic.forEach(post -> {
+			post(post.getPostInfo());
+			for (Packet packet : Packet.fromPost(post))
+				post(packet);
+		});
+	}
 
 	/**
 	 * Constructs an empty BrokerTopic.
@@ -91,7 +102,7 @@ class BrokerTopic extends AbstractTopic {
 	 * @param emptyPacketsPerPostInfoMap the empty map where the Packets of every
 	 *                                   PostInfo object will be added
 	 */
-	synchronized public void getPostsSince(long postId, List<PostInfo> emptyPostInfoList,
+	public synchronized void getPostsSince(long postId, List<PostInfo> emptyPostInfoList,
 	        Map<Long, Packet[]> emptyPacketsPerPostInfoMap) {
 
 		final Integer index = indexPerPostInfoId.get(postId);
@@ -130,5 +141,10 @@ class BrokerTopic extends AbstractTopic {
 		if (!super.equals(obj))
 			return false;
 		return (obj instanceof BrokerTopic);
+	}
+
+	@Override
+	public Iterator<Post> iterator() {
+		throw new UnsupportedOperationException("Not yet implemented");
 	}
 }

@@ -2,6 +2,7 @@ package eventDeliverySystem.datastructures;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,13 @@ public class Topic extends AbstractTopic {
 	private final Map<Long, Integer> indexPerPostId;
 
 	private Post lastPost;
+
+	public Topic(AbstractTopic topic) {
+		this(topic.getName());
+		for (Post post : topic) {
+			post(post);
+		}
+	}
 
 	/**
 	 * Creates a new, empty, Topic.
@@ -169,6 +177,11 @@ public class Topic extends AbstractTopic {
 		if (!super.equals(obj))
 			return false;
 		return (obj instanceof Topic);
+	}
+
+	@Override
+	public Iterator<Post> iterator() {
+		return postList.subList(1, postList.size()).iterator();
 	}
 
 	/**

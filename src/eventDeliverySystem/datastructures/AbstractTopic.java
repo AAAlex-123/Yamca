@@ -4,6 +4,9 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -14,7 +17,7 @@ import eventDeliverySystem.util.Subscriber;
  *
  * @author Alex Mandelias
  */
-public abstract class AbstractTopic {
+public abstract class AbstractTopic implements Iterable<Post> {
 
 	/** Constant to be used when no post exists and an ID is needed */
 	public static final long FETCH_ALL_POSTS = -1L;
@@ -134,6 +137,11 @@ public abstract class AbstractTopic {
 		} catch (NoSuchAlgorithmException | ArithmeticException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override
+	public String toString() {
+		return String.format("AbstractTopic[name=%s, subCount=%d]", name, subscribers.size());
 	}
 
 	@Override
