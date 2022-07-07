@@ -62,6 +62,7 @@ public class Broker implements Runnable, AutoCloseable {
 	 */
 	public Broker(Path topicsRootDirectory) throws FileSystemException {
 		btm = new BrokerTopicManager(topicsRootDirectory);
+		btm.forEach(brokerTopic -> brokerTopic.subscribe(new BrokerTopicSubscriber(brokerTopic)));
 
 		try {
 			clientRequestSocket = new ServerSocket(29621, // PortManager.getNewAvailablePort(),
@@ -228,20 +229,25 @@ public class Broker implements Runnable, AutoCloseable {
 
 					LG.sout("success=%s", success);
 
-					// send existing topics that the consumer does not have
-					final long idOfLast = topicToken.getLastId();
-					LG.sout("idOfLast=%d", idOfLast);
+					oos.writeBoolean(success);
+					oos.flush();
 
-					final List<PostInfo> piList = new LinkedList<>();
-					final Map<Long, Packet[]> packetMap = new HashMap<>();
-					getTopic(topicName).getPostsSince(idOfLast, piList, packetMap);
+					if (success) {
+						// send existing topics that the consumer does not have
+						final long idOfLast = topicToken.getLastId();
+						LG.sout("idOfLast=%d", idOfLast);
 
-					LG.sout("piList=%s", piList);
-					LG.sout("packetMap=%s", packetMap);
-					new PushThread(oos, piList, packetMap, Protocol.KEEP_ALIVE).run();
+						final List<PostInfo> piList = new LinkedList<>();
+						final Map<Long, Packet[]> packetMap = new HashMap<>();
+						getTopic(topicName).getPostsSince(idOfLast, piList, packetMap);
 
-					BrokerTopic topic = getTopic(topicName);
-					new BrokerPushThread(topic, oos).start();
+						LG.sout("piList=%s", piList);
+						LG.sout("packetMap=%s", packetMap);
+						new PushThread(oos, piList, packetMap, Protocol.KEEP_ALIVE).run();
+
+						BrokerTopic topic = getTopic(topicName);
+						new BrokerPushThread(topic, oos).start();
+					}
 
 					LG.out();
 					LG.sout(end, message.getType(), topicName);
@@ -251,8 +257,16 @@ public class Broker implements Runnable, AutoCloseable {
 				case BROKER_DISCOVERY: {
 					String topicName = (String) message.getValue();
 					LG.sout(start, message.getType(), topicName);
-					LG.in();
-					new BrokerDiscoveryThread(oos, topicName).run();
+
+					LG.sout("topicName=%s", topicName);
+					final ConnectionInfo brokerInfo = getAssignedBroker(topicName);
+					LG.sout("brokerInfo=%s", brokerInfo);
+
+					try {
+						oos.writeObject(brokerInfo);
+					} catch (final IOException e) {
+						// do nothing
+					}
 
 					oos.flush();
 					socket.close();
@@ -277,23 +291,7 @@ public class Broker implements Runnable, AutoCloseable {
 
 					if (success) {
 						BrokerTopic bt = getTopic(topicName);
-						bt.subscribe(new Subscriber() {
-							@Override
-							public void notify(PostInfo postInfo, String topicName) {
-								;
-							}
-
-							@Override
-							public void notify(Packet packet, String topicName) {
-								if (packet.isFinal()) {
-									try {
-										bt.savePostToTFS(packet.getPostId());
-									} catch (FileSystemException e) {
-										close();
-									}
-								}
-							}
-						});
+						bt.subscribe(new BrokerTopicSubscriber(bt));
 					}
 
 					oos.writeBoolean(success);
@@ -338,8 +336,23 @@ public class Broker implements Runnable, AutoCloseable {
 			}
 		}
 
-		private void registerConsumer(String topicName, ObjectOutputStream oos) {
+		private void registerConsumer(String topicName, ObjectOutputStream oos) throws NoSuchElementException {
 			btm.registerConsumer(topicName, oos);
+		}
+
+		private ConnectionInfo getAssignedBroker(String topicName) {
+			final int brokerCount = brokerConnections.size();
+
+			final int hash        = AbstractTopic.hashForTopic(topicName);
+			final int brokerIndex = Math.abs(hash % (brokerCount + 1));
+
+			// last index (out of range normally) => this broker is responsible for the topic
+			// this works because the default broker is the only broker that processes such requests.
+			if (brokerIndex == brokerCount)
+				return ConnectionInfo.forServerSocket(clientRequestSocket);
+
+			// else send the broker from the other connections
+			return brokerCI.get(brokerIndex);
 		}
 	}
 
@@ -381,60 +394,28 @@ public class Broker implements Runnable, AutoCloseable {
 		}
 	}
 
-	/**
-	 * A Thread for discovering the actual Broker for a Topic.
-	 *
-	 * @author Alex Mandelias
-	 */
-	private class BrokerDiscoveryThread extends Thread {
+	private class BrokerTopicSubscriber implements Subscriber {
 
-		private final ObjectOutputStream oos;
-		private final String             topicName;
+		private final BrokerTopic brokerTopic;
 
-		/**
-		 * Constructs the Thread that, when run, will write the ConnectionInfo of the
-		 * Broker responsible for the requested Topic to the given output stream.
-		 *
-		 * @param stream    the output stream to which to write the ConnectionInfo
-		 * @param topicName the name of the Topic
-		 */
-		public BrokerDiscoveryThread(ObjectOutputStream stream, String topicName) {
-			super("BrokerDiscoveryThread-" + topicName);
-			oos = stream;
-			this.topicName = topicName;
+		public BrokerTopicSubscriber(BrokerTopic brokerTopic) {
+			this.brokerTopic = brokerTopic;
 		}
 
 		@Override
-		public void run() {
-
-			LG.sout("BrokerDiscoveryThread#run()");
-			LG.in();
-
-			LG.sout("topicName=%s", topicName);
-			final ConnectionInfo brokerInfo = getAssignedBroker();
-			LG.sout("brokerInfo=%s", brokerInfo);
-
-			try {
-				oos.writeObject(brokerInfo);
-			} catch (final IOException e) {
-				// do nothing
-			}
-			LG.out();
+		public void notify(PostInfo postInfo, String topicName) {
+			// do nothing
 		}
 
-		private ConnectionInfo getAssignedBroker() {
-			final int brokerCount = brokerConnections.size();
-
-			final int hash        = AbstractTopic.hashForTopic(topicName);
-			final int brokerIndex = Math.abs(hash % (brokerCount + 1));
-
-			// last index (out of range normally) => this broker is responsible for the topic
-			// this works because the default broker is the only broker that processes such requests.
-			if (brokerIndex == brokerCount)
-				return ConnectionInfo.forServerSocket(clientRequestSocket);
-
-			// else send the broker from the other connections
-			return brokerCI.get(brokerIndex);
+		@Override
+		public void notify(Packet packet, String topicName) {
+			if (packet.isFinal()) {
+				try {
+					brokerTopic.savePostToTFS(packet.getPostId());
+				} catch (FileSystemException e) {
+					close();
+				}
+			}
 		}
 	}
 }
