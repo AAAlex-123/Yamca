@@ -253,7 +253,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		 *                                  Topic with the same name.
 		 */
 		public void addSocket(Topic topic, Socket socket) {
-			LG.sout("Consumer#addSocket(%s, %s)", topic, socket);
+			LG.sout("TopicManager#addSocket(%s, %s)", topic, socket);
 			add(topic);
 			tdMap.get(topic.getName()).socket = socket;
 		}

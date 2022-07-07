@@ -182,6 +182,7 @@ public class Broker implements Runnable, AutoCloseable {
 		public void run() {
 
 			LG.ssocket("Starting ClientRequestHandler for Socket", socket);
+			LG.in();
 
 			try {
 				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
@@ -191,11 +192,14 @@ public class Broker implements Runnable, AutoCloseable {
 				final Message message = (Message) ois.readObject();
 				LG.sout("Creating thread for message type: %s", message.getType());
 
+				final String start = "%s '%s'";
+				final String end = "/%s '%s'";
+
 				LG.in();
 				switch (message.getType()) {
 				case DATA_PACKET_SEND: {
 					String topicName = (String) message.getValue();
-					LG.sout("DATA_PACKET_SEND '%s'", topicName);
+					LG.sout(start, message.getType(), topicName);
 					LG.in();
 
 					BrokerTopic topic = getTopic(topicName);
@@ -204,18 +208,25 @@ public class Broker implements Runnable, AutoCloseable {
 					oos.flush();
 					socket.close();
 					LG.out();
+					LG.sout(end, message.getType(), topicName);
 					break;
 				}
 
 				case INITIALISE_CONSUMER: {
 					final TopicToken topicToken = (TopicToken) message.getValue();
 					final String     topicName  = topicToken.getName();
-					LG.sout("INITIALISE_CONSUMER '%s'", topicName);
+					LG.sout(start, message.getType(), topicName);
 					LG.in();
 
-					// previous code was cringe :D
+					boolean success;
+					try {
+						registerConsumer(topicName, oos);
+						success = true;
+					} catch (NoSuchElementException e) {
+						success = false;
+					}
 
-					registerConsumer(topicName, oos);
+					LG.sout("success=%s", success);
 
 					// send existing topics that the consumer does not have
 					final long idOfLast = topicToken.getLastId();
@@ -233,24 +244,26 @@ public class Broker implements Runnable, AutoCloseable {
 					new BrokerPushThread(topic, oos).start();
 
 					LG.out();
+					LG.sout(end, message.getType(), topicName);
 					break;
 				}
 
 				case BROKER_DISCOVERY: {
 					String topicName = (String) message.getValue();
-					LG.sout("BROKER_DISCOVERY '%s'", topicName);
+					LG.sout(start, message.getType(), topicName);
 					LG.in();
 					new BrokerDiscoveryThread(oos, topicName).run();
 
 					oos.flush();
 					socket.close();
 					LG.out();
+					LG.sout(end, message.getType(), topicName);
 					break;
 				}
 
 				case CREATE_TOPIC: {
 					String topicName = (String) message.getValue();
-					LG.sout("CREATE_TOPIC '%s'", topicName);
+					LG.sout(start, message.getType(), topicName);
 					LG.in();
 					final boolean topicExists = topicExists(topicName);
 
@@ -288,6 +301,7 @@ public class Broker implements Runnable, AutoCloseable {
 					oos.flush();
 					socket.close();
 					LG.out();
+					LG.sout(end, message.getType(), topicName);
 					break;
 				}
 
@@ -302,6 +316,9 @@ public class Broker implements Runnable, AutoCloseable {
 			} catch (final ClassNotFoundException e) {
 				e.printStackTrace();
 			}
+
+			LG.out();
+			LG.ssocket("Finishing ClientRequestHandler for Socket", socket);
 		}
 
 		private boolean topicExists(String topicName) {

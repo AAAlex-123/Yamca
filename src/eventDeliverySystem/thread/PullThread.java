@@ -34,7 +34,6 @@ public class PullThread extends Thread {
 	@Override
 	public void run() {
 		LG.sout("%s#run()", getName());
-		LG.in();
 
 		try {
 			final int postCount = ois.readInt();
@@ -64,7 +63,6 @@ public class PullThread extends Thread {
 			e.printStackTrace();
 		}
 
-		LG.out();
 		LG.sout("/%s#run()", getName());
 	}
 }

@@ -149,6 +149,8 @@ public class Publisher extends ClientNode {
 
 		@Override
 		public void run() {
+			LG.sout("PostThread#run()");
+			LG.in();
 
 			final Callback callback = (success, topicName1) -> {
 				if (!success)
@@ -163,6 +165,7 @@ public class Publisher extends ClientNode {
 				return;
 			}
 
+			LG.sout("actualBrokerCI=%s", actualBrokerCI);
 			try (Socket socket = new Socket(actualBrokerCI.getAddress(),
 			        actualBrokerCI.getPort())) {
 
@@ -183,6 +186,7 @@ public class Publisher extends ClientNode {
 			} catch (final IOException e) {
 				callback.onCompletion(false, topicName);
 			}
+			LG.out();
 		}
 	}
 }

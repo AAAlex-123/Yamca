@@ -60,7 +60,7 @@ public class LG {
 	 * @param socket the socket
 	 */
 	public static void ssocket(String header, Socket socket) {
-		LG.sout("%s:%n\t%s", header, socket);
+		LG.sout("%s: %s", header, socket);
 	}
 
 	/**
@@ -70,7 +70,7 @@ public class LG {
 	 * @param serverSocket the Server Socket
 	 */
 	public static void ssocket(String header, ServerSocket serverSocket) {
-		LG.sout("%s:%n%s", header, serverSocket);
+		LG.sout("%s: %s", header, serverSocket);
 	}
 
 	/**
