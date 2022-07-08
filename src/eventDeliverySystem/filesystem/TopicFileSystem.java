@@ -1,6 +1,7 @@
 package eventDeliverySystem.filesystem;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
+import eventDeliverySystem.datastructures.ITopicDAO;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
 
@@ -24,7 +25,7 @@ import java.util.stream.Stream;
  *
  * @author Alex Mandelias
  */
-public class TopicFileSystem {
+public class TopicFileSystem implements ITopicDAO {
 
 	private static final Pattern PATTERN = Pattern
 	        .compile("(?<postId>-?\\d+)-(?<posterName>\\w+)\\.(?<extension>.*)");
@@ -52,32 +53,7 @@ public class TopicFileSystem {
 		this.topicsRootDirectory = topicsRootDirectory;
 	}
 
-	/**
-	 * Returns the all the Topic names found in the root directory.
-	 *
-	 * @return a collection of all the Topic names found
-	 *
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
-	 */
-	public Stream<String> getTopicNames() throws FileSystemException {
-		try {
-			return Files.list(topicsRootDirectory)
-			        .filter(Files::isDirectory)
-			        .map(path -> path.getFileName().toString());
-		} catch (IOException e) {
-			throw new FileSystemException(topicsRootDirectory, e);
-		}
-	}
-
-	/**
-	 * Creates a new empty Topic in the file system.
-	 *
-	 * @param topicName the name of the Topic
-	 *
-	 * @throws FileSystemException if a topic with that name already exists in this
-	 *                             file system
-	 */
+	@Override
 	public void createTopic(String topicName) throws FileSystemException {
 		final Path topicDirectory = resolveRoot(topicName);
 		try {
@@ -90,16 +66,7 @@ public class TopicFileSystem {
 		TopicFileSystem.create(head);
 	}
 
-	/**
-	 * Deletes an {@link AbstractTopic} from the local File System. This operation is not
-	 * atomic, meaning that if an Exception is thrown the local File System may
-	 * still contain some of the Topic's files, leaving it in an ambiguous state.
-	 *
-	 * @param topicName the name of the Topic
-	 *
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
-	 */
+	@Override
 	public void deleteTopic(String topicName) throws FileSystemException {
 
 		Path currentPath = resolveRoot(topicName);
@@ -113,54 +80,14 @@ public class TopicFileSystem {
 		}
 	}
 
-	/**
-	 * Adds a new {@link Post} to an existing {@link AbstractTopic}.
-	 *
-	 * @param post      the new Post
-	 * @param topicName the topic's name
-	 *
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
-	 */
+	@Override
 	public void writePost(Post post, String topicName) throws FileSystemException {
 		final Path fileForPost = writePost0(post, topicName);
 		writePointerForPost(post, topicName);
 		updateHeadForPost(fileForPost, topicName);
 	}
 
-	/**
-	 * Reads a {@link AbstractTopic} from the File System and returns it.
-	 *
-	 * @param topicName the topic's name
-	 *
-	 * @return a Topic object containing the Posts read from the File System
-	 *
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
-	 */
-	public AbstractTopic readTopic(String topicName) throws FileSystemException {
-		final List<Post> loadedPosts = new LinkedList<>();
-
-		final Path firstPost = getFirstPost(topicName);
-		for (Path postFile = firstPost; postFile != null; postFile = getNextFile(postFile,
-		        topicName)) {
-			final String   filename   = postFile.getFileName().toString();
-			final PostInfo postInfo   = TopicFileSystem.getPostInfoFromFileName(filename);
-			final Post     loadedPost = TopicFileSystem.readPost(postInfo, postFile);
-			loadedPosts.add(loadedPost);
-		}
-
-		return AbstractTopic.createSimple(topicName, loadedPosts);
-	}
-
-	/**
-	 * Reads all Topics from the File System and returns them.
-	 *
-	 * @return a Collection including all the Posts loaded from the File System
-	 *
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
-	 */
+	@Override
 	public Collection<AbstractTopic> readAllTopics() throws FileSystemException {
 		final Set<AbstractTopic> topics = new HashSet<>();
 
@@ -222,6 +149,31 @@ public class TopicFileSystem {
 	}
 
 	// ==================== HELPERS FOR LOAD POSTS FOR TOPIC ====================
+
+	private Stream<String> getTopicNames() throws FileSystemException {
+		try {
+			return Files.list(topicsRootDirectory)
+						.filter(Files::isDirectory)
+						.map(path -> path.getFileName().toString());
+		} catch (IOException e) {
+			throw new FileSystemException(topicsRootDirectory, e);
+		}
+	}
+
+	private AbstractTopic readTopic(String topicName) throws FileSystemException {
+		final List<Post> loadedPosts = new LinkedList<>();
+
+		final Path firstPost = getFirstPost(topicName);
+		for (Path postFile = firstPost; postFile != null; postFile = getNextFile(postFile,
+																				 topicName)) {
+			final String   filename   = postFile.getFileName().toString();
+			final PostInfo postInfo   = TopicFileSystem.getPostInfoFromFileName(filename);
+			final Post     loadedPost = TopicFileSystem.readPost(postInfo, postFile);
+			loadedPosts.add(loadedPost);
+		}
+
+		return AbstractTopic.createSimple(topicName, loadedPosts);
+	}
 
 	// returns null if topic has no posts
 	private Path getFirstPost(String topicName) throws FileSystemException {
