@@ -1,27 +1,26 @@
 package eventDeliverySystem.server;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
-import eventDeliverySystem.filesystem.FileSystemException;
-import eventDeliverySystem.filesystem.TopicFileSystem;
+import eventDeliverySystem.datastructures.ITopicDAO;
 import eventDeliverySystem.util.LG;
 
+import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.nio.file.Path;
 import java.util.*;
 
 public class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> {
 
-    private final TopicFileSystem tfs;
+    private final ITopicDAO postDao;
     private final Map<String, Set<ObjectOutputStream>> consumerOOSPerTopic = new HashMap<>();
     private final Map<String, BrokerTopic>             topicsByName = new HashMap<>();
 
-    public BrokerTopicManager(Path topicsRootDirectory) throws FileSystemException {
-        LG.sout("BrokerTopicManager(%s)", topicsRootDirectory);
+    public BrokerTopicManager(ITopicDAO postDao) throws IOException {
+        LG.sout("BrokerTopicManager(%s)", postDao);
         LG.in();
-        tfs = new TopicFileSystem(topicsRootDirectory);
-        for (AbstractTopic abstractTopic : tfs.readAllTopics()) {
+        this.postDao = postDao;
+        for (AbstractTopic abstractTopic : this.postDao.readAllTopics()) {
             LG.sout("abstractTopic=%s", abstractTopic);
-            addExistingTopic(new BrokerTopic(abstractTopic, tfs));
+            addExistingTopic(new BrokerTopic(abstractTopic, this.postDao));
         }
         LG.out();
     }
@@ -52,15 +51,15 @@ public class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> 
        }
     }
 
-    public void addTopic(String topicName) throws FileSystemException, IllegalArgumentException {
+    public void addTopic(String topicName) throws IOException, IllegalArgumentException {
         assertTopicDoesNotExist(topicName);
 
-        BrokerTopic topic = new BrokerTopic(topicName, tfs);
+        BrokerTopic topic = new BrokerTopic(topicName, postDao);
 
         addExistingTopic(topic);
 
-        synchronized (tfs) {
-            tfs.createTopic(topicName);
+        synchronized (postDao) {
+            postDao.createTopic(topicName);
         }
     }
 

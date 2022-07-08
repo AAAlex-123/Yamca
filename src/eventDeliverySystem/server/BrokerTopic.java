@@ -5,9 +5,9 @@ import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
-import eventDeliverySystem.filesystem.FileSystemException;
-import eventDeliverySystem.filesystem.TopicFileSystem;
+import eventDeliverySystem.datastructures.ITopicDAO;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -29,14 +29,14 @@ class BrokerTopic extends AbstractTopic {
 		dummyPostInfo = new PostInfo(null, null, AbstractTopic.FETCH_ALL_POSTS);
 	}
 
-	private final TopicFileSystem tfs;
+	private final ITopicDAO postDAO;
 
 	private final List<PostInfo>          postInfoList = new LinkedList<>();
 	private final Map<Long, List<Packet>> packetsPerPostInfoMap = new HashMap<>();
 	private final Map<Long, Integer>      indexPerPostInfoId = new HashMap<>();
 
-	public BrokerTopic(AbstractTopic abstractTopic, TopicFileSystem tfs) {
-		this(abstractTopic.getName(), tfs);
+	public BrokerTopic(AbstractTopic abstractTopic, ITopicDAO postDAO) {
+		this(abstractTopic.getName(), postDAO);
 		abstractTopic.forEach(post -> {
 			post(post.getPostInfo());
 			for (Packet packet : Packet.fromPost(post))
@@ -49,9 +49,9 @@ class BrokerTopic extends AbstractTopic {
 	 *
 	 * @param name the name of the new BrokerTopic
 	 */
-	public BrokerTopic(String name, TopicFileSystem tfs) {
+	public BrokerTopic(String name, ITopicDAO postDAO) {
 		super(name);
-		this.tfs = tfs;
+		this.postDAO = postDAO;
 
 		postInfoList.add(dummyPostInfo);
 		indexPerPostInfoId.put(AbstractTopic.FETCH_ALL_POSTS, 0);
@@ -120,13 +120,13 @@ class BrokerTopic extends AbstractTopic {
 		}
 	}
 
-	public void savePostToTFS(long postId) throws FileSystemException {
+	public void savePostToTFS(long postId) throws IOException {
 		PostInfo pi = postInfoList.get(indexPerPostInfoId.get(postId));
 		final List<Packet> ls = packetsPerPostInfoMap.get(postId);
 		Packet[] packets = ls.toArray(new Packet[ls.size()]);
 
 		Post post = Post.fromPackets(packets, pi);
-		tfs.writePost(post, getName());
+		postDAO.writePost(post, getName());
 	}
 
 	@Override

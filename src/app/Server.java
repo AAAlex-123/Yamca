@@ -1,10 +1,13 @@
 package app;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.ThreadLocalRandom;
 
+import eventDeliverySystem.datastructures.ITopicDAO;
 import eventDeliverySystem.filesystem.FileSystemException;
+import eventDeliverySystem.filesystem.TopicFileSystem;
 import eventDeliverySystem.server.Broker;
 import eventDeliverySystem.util.LG;
 
@@ -73,7 +76,15 @@ public class Server {
 			}
 		}
 
-		try (Broker broker = leader ? new Broker(path) : new Broker(path, ip, port)) {
+		ITopicDAO postDao;
+		try {
+			postDao = new TopicFileSystem(path);
+		} catch (FileSystemException e) {
+			System.err.printf("Path %s does not exist", path);
+			return;
+		}
+
+		try (Broker broker = leader ? new Broker(postDao) : new Broker(postDao, ip, port)) {
 			final String brokerId = leader
 					? "Leader"
 					: Integer.toString(ThreadLocalRandom.current().nextInt(1, 1000));
@@ -83,7 +94,7 @@ public class Server {
 			thread.join();
 		} catch (InterruptedException e) {
 			// do nothing
-		} catch (FileSystemException e) {
+		} catch (IOException e) {
 			System.err.printf("Path %s does not exist", path);
 		}
 	}

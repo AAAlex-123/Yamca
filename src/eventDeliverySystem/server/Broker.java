@@ -6,23 +6,20 @@ import java.io.ObjectOutputStream;
 import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.ConnectionInfo;
+import eventDeliverySystem.datastructures.ITopicDAO;
 import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.datastructures.Topic.TopicToken;
 import eventDeliverySystem.filesystem.FileSystemException;
-import eventDeliverySystem.filesystem.TopicFileSystem;
 import eventDeliverySystem.thread.PullThread;
 import eventDeliverySystem.thread.PushThread;
 import eventDeliverySystem.thread.PushThread.Protocol;
@@ -56,12 +53,12 @@ public class Broker implements Runnable, AutoCloseable {
 	 * Create a new leader broker. This is necessarily the first step to initialize
 	 * the server network.
 	 *
-	 * @param topicsRootDirectory the directory where this Broker's Topics will be saved
+	 * @param postDao the {@link ITopicDAO} object responsible for this Broker's Posts.
 	 *
 	 * @throws FileSystemException if the path given does not correspond to an existing directory
 	 */
-	public Broker(Path topicsRootDirectory) throws FileSystemException {
-		btm = new BrokerTopicManager(topicsRootDirectory);
+	public Broker(ITopicDAO postDao) throws IOException {
+		btm = new BrokerTopicManager(postDao);
 		btm.forEach(brokerTopic -> brokerTopic.subscribe(new BrokerTopicSubscriber(brokerTopic)));
 
 		try {
@@ -81,7 +78,7 @@ public class Broker implements Runnable, AutoCloseable {
 	/**
 	 * Create a non-leader broker and connect it to the server network.
 	 *
-	 * @param topicsRootDirectory the directory where this Broker's Topics will be saved
+	 * @param postDao the {@link ITopicDAO} object responsible for this Broker's Posts.
 	 * @param leaderIP   the IP of the leader broker
 	 * @param leaderPort the port of the leader broker
 	 *
@@ -89,8 +86,8 @@ public class Broker implements Runnable, AutoCloseable {
 	 * @throws FileSystemException if the path given does not correspond to an existing directory
 	 */
 	@SuppressWarnings("resource")
-	public Broker(Path topicsRootDirectory, String leaderIP, int leaderPort) throws FileSystemException {
-		this(topicsRootDirectory);
+	public Broker(ITopicDAO postDao, String leaderIP, int leaderPort) throws IOException {
+		this(postDao);
 		try {
 			final Socket leaderConnection = new Socket(leaderIP, leaderPort);
 
@@ -331,7 +328,7 @@ public class Broker implements Runnable, AutoCloseable {
 			try {
 				btm.addTopic(topicName);
 				return true;
-			} catch (FileSystemException e) {
+			} catch (IOException e) {
 				return false;
 			}
 		}
@@ -412,7 +409,7 @@ public class Broker implements Runnable, AutoCloseable {
 			if (packet.isFinal()) {
 				try {
 					brokerTopic.savePostToTFS(packet.getPostId());
-				} catch (FileSystemException e) {
+				} catch (IOException e) {
 					close();
 				}
 			}
