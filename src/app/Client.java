@@ -72,6 +72,7 @@ public class Client {
 		} catch (final IOException e) {
 			System.err.printf(
 			        "There was an I/O error either while interacting with the file system or connecting to the server");
+			e.printStackTrace();
 			return;
 		}
 		ui.setVisible(true);

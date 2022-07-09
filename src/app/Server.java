@@ -95,7 +95,8 @@ public class Server {
 		} catch (InterruptedException e) {
 			// do nothing
 		} catch (IOException e) {
-			System.err.printf("Path %s does not exist", path);
+			System.err.printf("I/O error associated with path %s", path);
+			e.printStackTrace();
 		}
 	}
 }
