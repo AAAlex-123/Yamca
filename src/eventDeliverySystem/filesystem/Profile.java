@@ -81,8 +81,8 @@ public class Profile {
 			throw new NullPointerException("Topic can't be null");
 
 		final String topicName = topic.getName();
-		if (topics.containsKey(topicName))
-			throw new IllegalArgumentException("Topic with name " + topicName + " already exists");
+
+		assertTopicDoesNotExist(topicName);
 
 		topics.put(topicName, topic);
 		unreadTopics.put(topicName, 0);
@@ -97,11 +97,9 @@ public class Profile {
 	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
 	public void updateTopic(String topicName, List<Post> posts) {
-		final Topic topic = topics.get(topicName);
-		if (topic == null)
-			throw new NoSuchElementException("No Topic with name " + topicName + " found");
+		assertTopicExists(topicName);
 
-		topic.post(posts);
+		topics.get(topicName).post(posts);
 	}
 
 	/**
@@ -112,16 +110,22 @@ public class Profile {
 	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
 	public void removeTopic(String topicName) {
-		if (topics.remove(topicName) == null)
-			throw new NoSuchElementException("No Topic with name " + topicName + " found");
+		assertTopicExists(topicName);
+
+		topics.remove(topicName);
+		unreadTopics.remove(topicName);
 	}
 
 	/**
 	 * Marks a Topic as unread.
 	 *
 	 * @param topicName the name of the Topic
+	 *
+	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
 	public void markUnread(String topicName) {
+		assertTopicExists(topicName);
+
 		unreadTopics.put(topicName, unreadTopics.get(topicName) + 1);
 	}
 
@@ -129,8 +133,12 @@ public class Profile {
 	 * Marks all posts in a Topic as read.
 	 *
 	 * @param topicName the name of the Topic
+	 *
+	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
 	public void clearUnread(String topicName) {
+		assertTopicExists(topicName);
+
 		unreadTopics.put(topicName, 0);
 	}
 
@@ -138,5 +146,15 @@ public class Profile {
 	public String toString() {
 		final List<Object> topicNames = Arrays.asList(topics.keySet().toArray());
 		return String.format("Profile [name=%s, topics=%s]", name, topicNames);
+	}
+
+	private void assertTopicExists(String topicName) throws NoSuchElementException {
+		if (!topics.containsKey(topicName))
+			throw new NoSuchElementException("No Topic with name " + topicName + " found");
+	}
+
+	private void assertTopicDoesNotExist(String topicName) throws IllegalArgumentException {
+		if (topics.containsKey(topicName))
+			throw new NoSuchElementException("Topic with name " + topicName + " already exists");
 	}
 }
