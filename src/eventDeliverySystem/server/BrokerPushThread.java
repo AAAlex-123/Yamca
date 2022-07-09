@@ -81,7 +81,7 @@ class BrokerPushThread extends Thread implements Subscriber {
 						oos.writeObject(queue.remove());
 					}
 				} catch (final IOException e) {
-					e.printStackTrace();
+					return; // topic deleted -> socket closed by broker
 				}
 
 				synchronized (queue) {

@@ -69,5 +69,8 @@ public class Message implements Serializable {
 
 		/** Requests the creation of a Topic. The value is the Topic's name */
 		CREATE_TOPIC,
+
+		/** Requests the deletion of a Topic. The value is the Topic's name */
+		DELETE_TOPIC,
 	}
 }

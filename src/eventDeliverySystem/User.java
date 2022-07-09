@@ -156,7 +156,7 @@ public class User {
 	 * @throws FileSystemException if an I/O error occurs while interacting with the
 	 *                             file system
 	 *
-	 * @throw IllegalArgumentException if a Topic with the same name already exists
+	 * @throws IllegalArgumentException if a Topic with the same name already exists
 	 */
 	public boolean createTopic(String topicName) throws ServerException, FileSystemException {
 		LG.sout("User#createTopic(%s)", topicName);
@@ -165,6 +165,21 @@ public class User {
 		LG.sout("success=%s", success);
 		if (success)
 			listenForNewTopic(topicName);
+
+		LG.out();
+		return success;
+	}
+
+	public boolean deleteTopic(String topicName) throws ServerException, FileSystemException {
+		LG.sout("User#deleteTopic(%s)", topicName);
+		LG.in();
+		final boolean success = publisher.deleteTopic(topicName);
+		LG.sout("success=%s", success);
+		if (success) {
+			consumer.stopListeningForTopic(topicName);
+			currentProfile.removeTopic(topicName);
+			profileFileSystem.deleteTopic(topicName);
+		}
 
 		LG.out();
 		return success;

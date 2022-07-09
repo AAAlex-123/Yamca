@@ -2,6 +2,7 @@ package eventDeliverySystem.client;
 
 import static eventDeliverySystem.datastructures.Message.MessageType.CREATE_TOPIC;
 import static eventDeliverySystem.datastructures.Message.MessageType.DATA_PACKET_SEND;
+import static eventDeliverySystem.datastructures.Message.MessageType.DELETE_TOPIC;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -123,6 +124,36 @@ public class Publisher extends ClientNode {
 			oos.writeObject(new Message(CREATE_TOPIC, topicName));
 
 			return ois.readBoolean(); // true or false, successful creation or not
+
+		} catch (final IOException e) {
+			throw new ServerException(topicName, e);
+		}
+	}
+
+	/**
+	 * Request that the remote server delete the existing Topic with the specified name, by
+	 * connecting to the actual Broker for the Topic.
+	 *
+	 * @param topicName the name of the new Topic
+	 *
+	 * @return {@code true} if Topic was successfully deleted, {@code false} if an
+	 *         IOException occurred while transmitting the request or no Topic
+	 *         with that name exists
+	 *
+	 * @throws ServerException if a connection to the server fails
+	 */
+	public boolean deleteTopic(String topicName) throws ServerException {
+
+		final ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
+
+		try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
+			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+			oos.flush();
+			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+
+			oos.writeObject(new Message(DELETE_TOPIC, topicName));
+
+			return ois.readBoolean(); // true or false, successful deletion or not
 
 		} catch (final IOException e) {
 			throw new ServerException(topicName, e);

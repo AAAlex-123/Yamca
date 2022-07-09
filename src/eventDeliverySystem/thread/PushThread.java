@@ -118,6 +118,8 @@ public class PushThread extends Thread {
 					oos.writeObject(packet);
 			}
 
+			oos.flush();
+
 			success = true;
 			LG.out();
 

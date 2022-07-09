@@ -1,5 +1,6 @@
 package eventDeliverySystem.thread;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
@@ -59,6 +60,13 @@ public class PullThread extends Thread {
 				LG.out();
 			}
 
+		} catch (final EOFException e) {
+			LG.sout("EOF EXCEPTION ON PULL THREAD");
+			try {
+				ois.close();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 		} catch (final ClassNotFoundException | IOException e) {
 			e.printStackTrace();
 		}

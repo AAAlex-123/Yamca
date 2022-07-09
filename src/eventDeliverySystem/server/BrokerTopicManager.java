@@ -63,6 +63,27 @@ public class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> 
         }
     }
 
+    public void removeTopic(String topicName) throws IOException, NoSuchElementException {
+
+        assertTopicExists(topicName);
+
+        synchronized (topicsByName) {
+            topicsByName.remove(topicName);
+        }
+
+        synchronized (consumerOOSPerTopic) {
+            for (final ObjectOutputStream oos : consumerOOSPerTopic.get(topicName)) {
+                oos.flush();
+                oos.close();
+            }
+
+            consumerOOSPerTopic.get(topicName).clear();
+            consumerOOSPerTopic.remove(topicName);
+        }
+
+        postDao.deleteTopic(topicName);
+    }
+
     public void registerConsumer(String topicName, ObjectOutputStream oos) throws NoSuchElementException {
         assertTopicExists(topicName);
 

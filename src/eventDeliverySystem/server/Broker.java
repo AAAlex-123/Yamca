@@ -203,7 +203,6 @@ public class Broker implements Runnable, AutoCloseable {
 					BrokerTopic topic = getTopic(topicName);
 					new PullThread(ois, topic).run();
 
-					oos.flush();
 					socket.close();
 					LG.out();
 					LG.sout(end, message.getType(), topicName);
@@ -216,13 +215,7 @@ public class Broker implements Runnable, AutoCloseable {
 					LG.sout(start, message.getType(), topicName);
 					LG.in();
 
-					boolean success;
-					try {
-						registerConsumer(topicName, oos);
-						success = true;
-					} catch (NoSuchElementException e) {
-						success = false;
-					}
+					final boolean success = registerConsumer(topicName, oos);
 
 					LG.sout("success=%s", success);
 
@@ -300,15 +293,39 @@ public class Broker implements Runnable, AutoCloseable {
 					break;
 				}
 
-				default:
+				case DELETE_TOPIC: {
+					String topicName = (String) message.getValue();
+					LG.sout(start, message.getType(), topicName);
+					LG.in();
+					final boolean topicExists = topicExists(topicName);
+
+					LG.sout("topicExists=%s", topicExists);
+					final boolean success;
+					if (!topicExists) {
+						success = false;
+					} else {
+						success = removeTopic(topicName);
+					}
+
+					LG.sout("success=%s", topicExists);
+
+					oos.writeBoolean(success);
+
+					oos.flush();
+					socket.close();
+					LG.out();
+					LG.sout(end, message.getType(), topicName);
+					break;
+				}
+
+				default: {
 					throw new IllegalArgumentException(
 					        "You forgot to put a case for the new Message enum");
 				}
+				}
 				LG.out();
 
-			} catch (final IOException ioe) {
-				// do nothing, ignore this client
-			} catch (final ClassNotFoundException e) {
+			} catch (final IOException | ClassNotFoundException e) {
 				e.printStackTrace();
 			}
 
@@ -328,13 +345,27 @@ public class Broker implements Runnable, AutoCloseable {
 			try {
 				btm.addTopic(topicName);
 				return true;
-			} catch (IOException e) {
+			} catch (IOException | IllegalArgumentException e) {
 				return false;
 			}
 		}
 
-		private void registerConsumer(String topicName, ObjectOutputStream oos) throws NoSuchElementException {
-			btm.registerConsumer(topicName, oos);
+		private boolean removeTopic(String topicName) {
+			try {
+				btm.removeTopic(topicName);
+				return true;
+			} catch (IOException | NoSuchElementException e) {
+				return false;
+			}
+		}
+
+		private boolean registerConsumer(String topicName, ObjectOutputStream oos) {
+			try {
+				btm.registerConsumer(topicName, oos);
+				return true;
+			} catch (NoSuchElementException e) {
+				return false;
+			}
 		}
 
 		private ConnectionInfo getAssignedBroker(String topicName) {

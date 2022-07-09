@@ -68,13 +68,16 @@ public class TopicFileSystem implements ITopicDAO {
 
 	@Override
 	public void deleteTopic(String topicName) throws FileSystemException {
+		final Path topicDirectory = resolveRoot(topicName);
 
-		Path currentPath = resolveRoot(topicName);
+		Path currentPath = topicDirectory;
 		try (Stream<Path> directoryStream = Files.list(currentPath)) {
 			for (Iterator<Path> iter = directoryStream.iterator(); iter.hasNext();) {
 				currentPath = iter.next();
 				Files.delete(currentPath);
 			}
+
+			Files.delete(topicDirectory);
 		} catch (IOException e) {
 			throw new FileSystemException(currentPath, e);
 		}

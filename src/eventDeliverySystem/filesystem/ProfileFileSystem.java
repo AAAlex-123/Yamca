@@ -131,6 +131,18 @@ public class ProfileFileSystem {
 	}
 
 	/**
+	 * Deletes an existing Topic from the current Profile.
+	 *
+	 * @param topicName the name of the new Topic
+	 *
+	 * @throws FileSystemException if an I/O error occurs while interacting with the
+	 *                             file system
+	 */
+	public void deleteTopic(String topicName) throws FileSystemException {
+		getTopicFileSystemForCurrentUser().deleteTopic(topicName);
+	}
+
+	/**
 	 * Saves a Post in the file system for the current Profile.
 	 *
 	 * @param post      the Post to save

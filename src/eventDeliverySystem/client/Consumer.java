@@ -137,6 +137,25 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	}
 
 	/**
+	 * Closes this Consumer's connection for a Topic.
+	 *
+	 * @param topicName the name of the Topic this Consumer already listens to
+	 *
+	 * @return {@code true} if this Consumer successfully started listening to the Topic,
+	 *         {@code false} if no Topic with such name exists
+	 *
+	 * @throws ServerException          if a connection to the server fails
+	 * @throws NoSuchElementException if this Consumer does not listen to a Topic with the given name
+	 */
+	public void stopListeningForTopic(String topicName) throws ServerException, NoSuchElementException {
+		try {
+			topicManager.removeSocket(topicName);
+		} catch (IOException e) {
+			throw new ServerException(topicName, e);
+		}
+	}
+
+	/**
 	 * Registers an existing Topic for this Consumer to continuously fetch new Posts
 	 * from.
 	 *
@@ -258,6 +277,30 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			tdMap.get(topic.getName()).socket = socket;
 		}
 
+		/**
+		 * Removes a Topic from this Manager and closes its associated socket.
+		 *
+		 * @param topicName the name of the Topic to remove
+		 *
+		 * @throws IOException if an I/O Exception occurs while closing the socket
+		 * @throws NoSuchElementException if this Manager doesn't have a Topic with the given name
+		 */
+		public void removeSocket(String topicName) throws IOException, NoSuchElementException {
+			LG.sout("TopicManager#removeSocket(%s)", topicName);
+			if (!tdMap.containsKey(topicName))
+				throw new NoSuchElementException("No Topic with name " + topicName + " found");
+
+			tdMap.remove(topicName);
+		}
+
+		/**
+		 * Partially adds a Topic to this Manager by creating its associated TopicData object.
+		 *
+		 * @param topic the Topic
+		 *
+		 * @throws IllegalArgumentException if this Manager already has a socket for a
+		 *                                  Topic with the same name.
+		 */
 		private void add(Topic topic) {
 			final String topicName = topic.getName();
 			if (tdMap.containsKey(topicName))
