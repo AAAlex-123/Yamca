@@ -170,6 +170,11 @@ public class Publisher extends ClientNode {
 			        actualBrokerCI.getPort())) {
 
 				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+				oos.flush();
+
+				// don't remove the following line: https://stackoverflow.com/questions/72920493/
+				final ObjectInputStream unused = new ObjectInputStream(socket.getInputStream());
+
 				oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
 
 				final PostInfo            postInfo  = post.getPostInfo();
