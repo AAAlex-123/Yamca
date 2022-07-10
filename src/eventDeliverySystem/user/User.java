@@ -26,7 +26,6 @@ import eventDeliverySystem.util.LG;
  */
 public class User {
 
-	private final UserSub userSub = new UserSub();
 	private final BasicListener listener = new BasicListener();
 
 	private final ProfileFileSystem profileFileSystem;
@@ -90,8 +89,9 @@ public class User {
 	        throws FileSystemException, UnknownHostException {
 		profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
 
-		publisher = new Publisher(serverIP, port, userSub);
-		consumer = new Consumer(serverIP, port, userSub);
+		final UserStub userStub = new UserStub();
+		publisher = new Publisher(serverIP, port, userStub);
+		consumer = new Consumer(serverIP, port, userStub);
 
 	}
 
@@ -281,32 +281,12 @@ public class User {
 		}
 	}
 
-	/**
-	 * An object that can be used to notify this User about an event for a Topic.
-	 *
-	 * @author Alex Mandelias
-	 */
-	public class UserSub {
+	public class UserStub {
 
-		private UserSub() {}
+		private UserStub() {}
 
-		/**
-		 * Notifies this User about an event for a Topic.
-		 *
-		 * @param topicName the name of the Topic
-		 */
-		public void notify(String topicName) {
-			currentProfile.markUnread(topicName);
-			LG.sout("YOU HAVE A NEW MESSAGE AT '%s'", topicName);
-		}
-
-		/**
-		 * Notifies this User about failure to send a Post to a Topic.
-		 *
-		 * @param topicName the name of the Topic
-		 */
-		public void failure(String topicName) {
-			LG.sout("MESSAGE FAILED TO SEND AT '%s'", topicName);
+		public void fireEvent(UserEvent e) {
+			User.this.processEvent(e);
 		}
 	}
 }

@@ -14,7 +14,9 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import eventDeliverySystem.user.User.UserSub;
+import eventDeliverySystem.user.User.UserStub;
+import eventDeliverySystem.user.UserEvent;
+import eventDeliverySystem.user.UserEvent.Tag;
 import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.datastructures.Packet;
@@ -38,7 +40,7 @@ import eventDeliverySystem.util.Subscriber;
  */
 public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 
-	private final UserSub      usersub;
+	private final UserStub userStub;
 	private final TopicManager topicManager;
 
 	/**
@@ -47,14 +49,14 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 * @param serverIP   the IP of the default broker, interpreted by
 	 *                   {@link InetAddress#getByName(String)}.
 	 * @param serverPort the port of the default broker
-	 * @param usersub    the UserSub object that will be notified when data arrives
+	 * @param userStub   the UserSub object that will be notified when data arrives
 	 *
 	 * @throws UnknownHostException if no IP address for the host could be found, or
 	 *                              if a scope_id was specified for a global IPv6
 	 *                              address while resolving the defaultServerIP.
 	 */
-	public Consumer(String serverIP, int serverPort, UserSub usersub) throws UnknownHostException {
-		this(InetAddress.getByName(serverIP), serverPort, usersub);
+	public Consumer(String serverIP, int serverPort, UserStub userStub) throws UnknownHostException {
+		this(InetAddress.getByName(serverIP), serverPort, userStub);
 	}
 
 	/**
@@ -63,25 +65,25 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 * @param serverIP   the IP of the default broker, interpreted by
 	 *                   {@link InetAddress#getByAddress(byte[])}.
 	 * @param serverPort the port of the default broker
-	 * @param usersub    the UserSub object that will be notified when data arrives
+	 * @param userStub   the UserSub object that will be notified when data arrives
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
 	 */
-	public Consumer(byte[] serverIP, int serverPort, UserSub usersub) throws UnknownHostException {
-		this(InetAddress.getByAddress(serverIP), serverPort, usersub);
+	public Consumer(byte[] serverIP, int serverPort, UserStub userStub) throws UnknownHostException {
+		this(InetAddress.getByAddress(serverIP), serverPort, userStub);
 	}
 
 	/**
 	 * Constructs a Consumer that will connect to a specific default broker.
 	 *
-	 * @param ip      the InetAddress of the default broker
-	 * @param port    the port of the default broker
-	 * @param usersub the UserSub object that will be notified when data arrives
+	 * @param ip       the InetAddress of the default broker
+	 * @param port     the port of the default broker
+	 * @param userStub the UserSub object that will be notified when data arrives
 	 */
-	private Consumer(InetAddress ip, int port, UserSub usersub) {
+	private Consumer(InetAddress ip, int port, UserStub userStub) {
 		super(ip, port);
 		topicManager = new TopicManager();
-		this.usersub = usersub;
+		this.userStub = userStub;
 	}
 
 	@Override
@@ -213,7 +215,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	public synchronized void notify(Packet packet, String topicName) {
 		LG.sout("Consumer#notify(%s, %s)", packet, topicName);
 		if (packet.isFinal())
-			usersub.notify(topicName);
+			userStub.fireEvent(UserEvent.successful(Tag.MESSAGE_RECEIVED, topicName));
 	}
 
 	private static class TopicManager implements AutoCloseable {

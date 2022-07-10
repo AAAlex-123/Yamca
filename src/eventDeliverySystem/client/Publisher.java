@@ -15,7 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import eventDeliverySystem.user.User.UserSub;
+import eventDeliverySystem.user.User.UserStub;
 import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.datastructures.Packet;
@@ -24,8 +24,9 @@ import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.server.Broker;
 import eventDeliverySystem.server.ServerException;
 import eventDeliverySystem.thread.PushThread;
-import eventDeliverySystem.thread.PushThread.Callback;
 import eventDeliverySystem.thread.PushThread.Protocol;
+import eventDeliverySystem.user.UserEvent;
+import eventDeliverySystem.user.UserEvent.Tag;
 import eventDeliverySystem.util.LG;
 
 /**
@@ -39,7 +40,7 @@ import eventDeliverySystem.util.LG;
  */
 public class Publisher extends ClientNode {
 
-	private final UserSub usersub;
+	private final UserStub userStub;
 
 	/**
 	 * Constructs a Publisher.
@@ -47,16 +48,16 @@ public class Publisher extends ClientNode {
 	 * @param defaultServerIP   the IP of the default broker, interpreted as
 	 *                          {@link InetAddress#getByName(String)}.
 	 * @param defaultServerPort the port of the default broker
-	 * @param usersub           the UserSub object that will be notified if a push
+	 * @param userStub          the UserStub object that will be notified if a push
 	 *                          fails
 	 *
 	 * @throws UnknownHostException if no IP address for the host could be found, or
 	 *                              if a scope_id was specified for a global IPv6
 	 *                              address while resolving the defaultServerIP.
 	 */
-	public Publisher(String defaultServerIP, int defaultServerPort, UserSub usersub)
+	public Publisher(String defaultServerIP, int defaultServerPort, UserStub userStub)
 	        throws UnknownHostException {
-		this(InetAddress.getByName(defaultServerIP), defaultServerPort, usersub);
+		this(InetAddress.getByName(defaultServerIP), defaultServerPort, userStub);
 	}
 
 	/**
@@ -65,26 +66,26 @@ public class Publisher extends ClientNode {
 	 * @param defaultServerIP   the IP of the default broker, interpreted as
 	 *                          {@link InetAddress#getByAddress(byte[])}.
 	 * @param defaultServerPort the port of the default broker
-	 * @param usersub           the UserSub object that will be notified if a push
+	 * @param userStub          the UserStub object that will be notified if a push
 	 *                          fails
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
 	 */
-	public Publisher(byte[] defaultServerIP, int defaultServerPort, UserSub usersub)
+	public Publisher(byte[] defaultServerIP, int defaultServerPort, UserStub userStub)
 	        throws UnknownHostException {
-		this(InetAddress.getByAddress(defaultServerIP), defaultServerPort, usersub);
+		this(InetAddress.getByAddress(defaultServerIP), defaultServerPort, userStub);
 	}
 
 	/**
 	 * Constructs a Publisher.
 	 *
-	 * @param ip      the InetAddress of the default broker
-	 * @param port    the port of the default broker
-	 * @param usersub the UserSub object that will be notified if a push fails
+	 * @param ip       the InetAddress of the default broker
+	 * @param port     the port of the default broker
+	 * @param userStub the UserStub object that will be notified if a push fails
 	 */
-	private Publisher(InetAddress ip, int port, UserSub usersub) {
+	private Publisher(InetAddress ip, int port, UserStub userStub) {
 		super(ip, port);
-		this.usersub = usersub;
+		this.userStub = userStub;
 	}
 
 	/**
@@ -183,16 +184,11 @@ public class Publisher extends ClientNode {
 			LG.sout("PostThread#run()");
 			LG.in();
 
-			final Callback callback = (success, topicName1) -> {
-				if (!success)
-					usersub.failure(topicName1);
-			};
-
 			final ConnectionInfo actualBrokerCI;
 			try {
 				actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
 			} catch (ServerException e) {
-				callback.onCompletion(false, topicName);
+				userStub.fireEvent(UserEvent.failed(Tag.MESSAGE_SENT, topicName, e));
 				return;
 			}
 
@@ -216,11 +212,19 @@ public class Publisher extends ClientNode {
 				packets.put(postInfo.getId(), Packet.fromPost(post));
 
 				final PushThread pushThread = new PushThread(oos, topicName, postInfos,
-				        packets, Protocol.NORMAL, callback);
+						packets, Protocol.NORMAL, (success, callbackTopicName, cause) -> {
+							if (success)
+								userStub.fireEvent(
+										UserEvent.successful(Tag.MESSAGE_SENT, callbackTopicName));
+							else
+								userStub.fireEvent(
+										UserEvent.failed(Tag.MESSAGE_SENT, callbackTopicName, cause));
+						});
+
 				pushThread.run();
 
 			} catch (final IOException e) {
-				callback.onCompletion(false, topicName);
+				userStub.fireEvent(UserEvent.failed(Tag.MESSAGE_SENT, topicName, e));
 			}
 			LG.out();
 		}
