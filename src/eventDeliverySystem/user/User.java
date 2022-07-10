@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 import app.CrappyUserUI;
 import eventDeliverySystem.client.Consumer;
@@ -16,7 +17,6 @@ import eventDeliverySystem.filesystem.ProfileFileSystem;
 import eventDeliverySystem.server.ServerException;
 import eventDeliverySystem.util.LG;
 
-
 /**
  * A class that manages the actions of the user by communicating with the server
  * and retrieving / committing posts to the file system.
@@ -27,6 +27,7 @@ import eventDeliverySystem.util.LG;
 public class User {
 
 	private final UserSub userSub = new UserSub();
+	private final BasicListener listener = new BasicListener();
 
 	private final ProfileFileSystem profileFileSystem;
 	private Profile                 currentProfile;
@@ -235,6 +236,50 @@ public class User {
 		return success;
 	}
 
+	public void addUserListener(UserListener l) {
+		listener.addListener(l);
+	}
+
+	public void processEvent(UserEvent e) {
+		switch (e.tag) {
+		case MESSAGE_SENT:
+			listener.onMessageSent(e);
+			break;
+		case MESSAGE_RECEIVED:
+			listener.onMessageReceived(e);
+			break;
+		default:
+			throw new IllegalArgumentException(
+					"You forgot to put a case for the new UserEvent#Tag enum");
+		}
+	}
+
+	private class BasicListener implements UserListener {
+
+		private final Set<UserListener> listeners = new HashSet<>();
+
+		public void addListener(UserListener l) {
+			listeners.add(l);
+		}
+
+		@Override
+		public void onMessageSent(UserEvent e) {
+			String topicName = e.topicName;
+			if (!e.success)
+				LG.sout("MESSAGE FAILED TO SEND AT '%s'", topicName);
+
+			listeners.forEach(l -> l.onMessageSent(e));
+		}
+
+		@Override
+		public void onMessageReceived(UserEvent e) {
+			String topicName = e.topicName;
+			currentProfile.markUnread(topicName);
+			LG.sout("YOU HAVE A NEW MESSAGE AT '%s'", topicName);
+
+			listeners.forEach(l -> l.onMessageReceived(e));
+		}
+	}
 	// temporary stuff because we don't have android
 
 	// TODO: remove
