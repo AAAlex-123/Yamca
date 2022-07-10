@@ -14,6 +14,8 @@ import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 
 import eventDeliverySystem.user.User;
+import eventDeliverySystem.user.UserAdapter;
+import eventDeliverySystem.user.UserEvent;
 import eventDeliverySystem.datastructures.Post;
 
 /**
@@ -25,14 +27,6 @@ public class CrappyUserUI extends JFrame {
 
 	private final transient User user;
 
-	// TODO: remove
-	public class UserUISub {
-		public void notify(String topicName) {
-			JOptionPane.showMessageDialog(CrappyUserUI.this,
-			        String.format("YOU HAVE A NEW MESSAGE AT '%s'", topicName));
-		}
-	}
-
 	public CrappyUserUI(boolean existing, String name, String serverIP, int serverPort, Path dir)
 	        throws IOException {
 		super(name);
@@ -41,7 +35,14 @@ public class CrappyUserUI extends JFrame {
 		else
 			user = User.createNew(serverIP, serverPort, dir, name);
 
-		user.setUserUISub(new UserUISub());
+		user.addUserListener(new UserAdapter() {
+			@Override
+			public void onMessageReceived(UserEvent e) {
+				if (e.success)
+					JOptionPane.showMessageDialog(CrappyUserUI.this,
+							String.format("YOU HAVE A NEW MESSAGE AT '%s'", e.topicName));
+			}
+		});
 
 		setSize(800, 600);
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
