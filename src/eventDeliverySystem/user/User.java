@@ -162,6 +162,8 @@ public class User {
 	public boolean createTopic(String topicName) throws ServerException, FileSystemException {
 		LG.sout("User#createTopic(%s)", topicName);
 		LG.in();
+
+		// TODO: replace code below with listener
 		final boolean success = publisher.createTopic(topicName);
 		LG.sout("success=%s", success);
 		if (success)
@@ -248,6 +250,9 @@ public class User {
 		case MESSAGE_RECEIVED:
 			listener.onMessageReceived(e);
 			break;
+		case TOPIC_CREATED:
+			listener.onTopicCreated(e);
+			break;
 		default:
 			throw new IllegalArgumentException(
 					"You forgot to put a case for the new UserEvent#Tag enum");
@@ -278,6 +283,11 @@ public class User {
 			LG.sout("YOU HAVE A NEW MESSAGE AT '%s'", topicName);
 
 			listeners.forEach(l -> l.onMessageReceived(e));
+		}
+
+		@Override
+		public void onTopicCreated(UserEvent e) {
+			listeners.forEach(l -> l.onTopicCreated(e));
 		}
 	}
 

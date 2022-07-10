@@ -99,32 +99,14 @@ public class Publisher extends ClientNode {
 
 	/**
 	 * Request that the remote server create a new Topic with the specified name by
-	 * connecting to the actual Broker for the Topic.
+	 * creating a new Thread that connects to the actual Broker for the Topic.
 	 *
 	 * @param topicName the name of the new Topic
-	 *
-	 * @return {@code true} if Topic was successfully created, {@code false} if an
-	 *         IOException occurred while transmitting the request or if a Topic
-	 *         with that name already exists
-	 *
-	 * @throws ServerException if a connection to the server fails
 	 */
-	public boolean createTopic(String topicName) throws ServerException {
-
-		final ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
-
-		try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
-			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-			oos.flush();
-			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-
-			oos.writeObject(new Message(MessageType.CREATE_TOPIC, topicName));
-
-			return ois.readBoolean(); // true or false, successful creation or not
-
-		} catch (final IOException e) {
-			throw new ServerException(topicName, e);
-		}
+	public void createTopic(String topicName) {
+		LG.sout("Publisher#createTopic(%s)", topicName);
+		Thread thread = new CreateTopicThread(topicName);
+		thread.start();
 	}
 
 	/**
@@ -237,6 +219,55 @@ public class Publisher extends ClientNode {
 				Throwable e1 = new ServerException("Connection to server lost", e);
 				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e1));
 			}
+			LG.out();
+		}
+	}
+
+	private class CreateTopicThread extends Thread {
+
+		private final Tag eventTag = Tag.TOPIC_CREATED;
+
+		private final String topicName;
+
+		public CreateTopicThread(String topicName) {
+			super("CreateTopicThread(" + topicName + ")");
+			this.topicName = topicName;
+		}
+
+		@Override
+		public void run() {
+			LG.sout("CreateTopicThread#run()");
+			LG.in();
+
+			final ConnectionInfo actualBrokerCI;
+			try {
+				actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
+			} catch (ServerException e) {
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
+				return;
+			}
+
+			try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
+				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+				oos.flush();
+				final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+
+				oos.writeObject(new Message(MessageType.CREATE_TOPIC, topicName));
+
+				boolean success = ois.readBoolean();
+
+				if (!success)
+					throw new ServerException("Topic " + topicName + " already exists");
+
+				userStub.fireEvent(UserEvent.successful(eventTag, topicName));
+
+			} catch (ServerException e) {
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
+			} catch (final IOException e) {
+				Throwable e1 = new ServerException("Connection to server lost", e);
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e1));
+			}
+
 			LG.out();
 		}
 	}

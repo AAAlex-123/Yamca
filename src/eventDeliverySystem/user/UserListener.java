@@ -6,4 +6,5 @@ public interface UserListener {
 
     void onMessageReceived(UserEvent e);
 
+    void onTopicCreated(UserEvent e);
 }

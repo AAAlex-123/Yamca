@@ -13,4 +13,9 @@ public abstract class UserAdapter implements UserListener {
     public void onMessageReceived(UserEvent e) {
         // empty so that it can be selectively implemented
     }
+
+    @Override
+    public void onTopicCreated(UserEvent e) {
+        // empty so that it can be selectively implemented
+    }
 }
