@@ -357,9 +357,12 @@ public class Broker implements Runnable, AutoCloseable {
 			try {
 				btm.removeTopic(topicName);
 				return true;
-			} catch (IOException | NoSuchElementException e) {
-				return false;
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (NoSuchElementException e) {
+				// do nothing specific to NoSuchElementException
 			}
+			return false;
 		}
 
 		private boolean registerConsumer(String topicName, ObjectOutputStream oos) {

@@ -110,33 +110,15 @@ public class Publisher extends ClientNode {
 	}
 
 	/**
-	 * Request that the remote server delete the existing Topic with the specified name, by
-	 * connecting to the actual Broker for the Topic.
+	 * Request that the remote server delete the existing Topic with the specified name by
+	 * creating a new Thread that connects to the actual Broker for the Topic.
 	 *
 	 * @param topicName the name of the new Topic
-	 *
-	 * @return {@code true} if Topic was successfully deleted, {@code false} if an
-	 *         IOException occurred while transmitting the request or no Topic
-	 *         with that name exists
-	 *
-	 * @throws ServerException if a connection to the server fails
 	 */
-	public boolean deleteTopic(String topicName) throws ServerException {
-
-		final ConnectionInfo actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
-
-		try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
-			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-			oos.flush();
-			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-
-			oos.writeObject(new Message(MessageType.DELETE_TOPIC, topicName));
-
-			return ois.readBoolean(); // true or false, successful deletion or not
-
-		} catch (final IOException e) {
-			throw new ServerException(topicName, e);
-		}
+	public void deleteTopic(String topicName) {
+		LG.sout("Publisher#deleteTopic(%s)", topicName);
+		Thread thread = new DeleteTopicThread(topicName);
+		thread.start();
 	}
 
 	private class PushThread extends Thread {
@@ -258,6 +240,55 @@ public class Publisher extends ClientNode {
 
 				if (!success)
 					throw new ServerException("Topic " + topicName + " already exists");
+
+				userStub.fireEvent(UserEvent.successful(eventTag, topicName));
+
+			} catch (ServerException e) {
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
+			} catch (final IOException e) {
+				Throwable e1 = new ServerException("Connection to server lost", e);
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e1));
+			}
+
+			LG.out();
+		}
+	}
+
+	private class DeleteTopicThread extends Thread {
+
+		private final Tag eventTag = Tag.TOPIC_DELETED;
+
+		private final String topicName;
+
+		public DeleteTopicThread(String topicName) {
+			super("DeleteTopicThread(" + topicName + ")");
+			this.topicName = topicName;
+		}
+
+		@Override
+		public void run() {
+			LG.sout("CreateTopicThread#run()");
+			LG.in();
+
+			final ConnectionInfo actualBrokerCI;
+			try {
+				actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
+			} catch (ServerException e) {
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
+				return;
+			}
+
+			try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
+				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+				oos.flush();
+				final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+
+				oos.writeObject(new Message(MessageType.DELETE_TOPIC, topicName));
+
+				boolean success = ois.readBoolean();
+
+				if (!success)
+					throw new ServerException("Topic " + topicName + " does not exist");
 
 				userStub.fireEvent(UserEvent.successful(eventTag, topicName));
 

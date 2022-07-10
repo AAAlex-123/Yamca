@@ -176,6 +176,8 @@ public class User {
 	public boolean deleteTopic(String topicName) throws ServerException, FileSystemException {
 		LG.sout("User#deleteTopic(%s)", topicName);
 		LG.in();
+
+		// TODO: replace code below with listener
 		final boolean success = publisher.deleteTopic(topicName);
 		LG.sout("success=%s", success);
 		if (success) {
@@ -253,6 +255,9 @@ public class User {
 		case TOPIC_CREATED:
 			listener.onTopicCreated(e);
 			break;
+		case TOPIC_DELETED:
+			listener.onTopicDeleted(e);
+			break;
 		default:
 			throw new IllegalArgumentException(
 					"You forgot to put a case for the new UserEvent#Tag enum");
@@ -288,6 +293,11 @@ public class User {
 		@Override
 		public void onTopicCreated(UserEvent e) {
 			listeners.forEach(l -> l.onTopicCreated(e));
+		}
+
+		@Override
+		public void onTopicDeleted(UserEvent e) {
+			listeners.forEach(l -> l.onTopicDeleted(e));
 		}
 	}
 

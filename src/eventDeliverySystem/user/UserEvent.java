@@ -30,6 +30,6 @@ public class UserEvent {
     }
 
     public enum Tag {
-        MESSAGE_SENT, MESSAGE_RECEIVED, TOPIC_CREATED;
+        MESSAGE_SENT, MESSAGE_RECEIVED, TOPIC_CREATED, TOPIC_DELETED;
     }
 }
