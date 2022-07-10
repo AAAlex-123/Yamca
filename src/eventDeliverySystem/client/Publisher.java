@@ -20,7 +20,6 @@ import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.server.Broker;
 import eventDeliverySystem.server.ServerException;
-import eventDeliverySystem.thread.PushThread;
 import eventDeliverySystem.thread.PushThread.Protocol;
 import eventDeliverySystem.user.UserEvent;
 import eventDeliverySystem.user.UserEvent.Tag;
@@ -94,7 +93,7 @@ public class Publisher extends ClientNode {
 	 */
 	public void push(Post post, String topicName) {
 		LG.sout("Publisher#push(%s, %s)", post, topicName);
-		Thread thread = new PostThread(post, topicName);
+		Thread thread = new Publisher.PushThread(post, topicName);
 		thread.start();
 	}
 
@@ -158,7 +157,9 @@ public class Publisher extends ClientNode {
 		}
 	}
 
-	private class PostThread extends Thread {
+	private class PushThread extends Thread {
+
+		private final Tag eventTag = Tag.MESSAGE_SENT;
 
 		private final Post   post;
 		private final String topicName;
@@ -170,7 +171,7 @@ public class Publisher extends ClientNode {
 		 * @param post      the Post
 		 * @param topicName the name of the Topic to which to push the Post
 		 */
-		public PostThread(Post post, String topicName) {
+		public PushThread(Post post, String topicName) {
 			super("PostThread");
 			this.post = post;
 			this.topicName = topicName;
@@ -185,7 +186,7 @@ public class Publisher extends ClientNode {
 			try {
 				actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
 			} catch (ServerException e) {
-				userStub.fireEvent(UserEvent.failed(Tag.MESSAGE_SENT, topicName, e));
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
 				return;
 			}
 
@@ -195,35 +196,46 @@ public class Publisher extends ClientNode {
 
 				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 				oos.flush();
-
-				// TODO: figure out communication when sending data
-
-				// don't remove the following line: https://stackoverflow.com/questions/72920493/
-				final ObjectInputStream unused = new ObjectInputStream(socket.getInputStream());
+				// don't remove the following line even if the ois isn't used
+				// https://stackoverflow.com/questions/72920493/
+				final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
 				oos.writeObject(new Message(MessageType.DATA_PACKET_SEND, topicName));
 
-				final PostInfo            postInfo  = post.getPostInfo();
-				final List<PostInfo>      postInfos = new LinkedList<>();
-				final Map<Long, Packet[]> packets   = new HashMap<>();
+				boolean success = ois.readBoolean();
+
+				if (!success)
+					throw new ServerException("Topic " + topicName + " does not exist");
+
+				final PostInfo postInfo = post.getPostInfo();
+				final List<PostInfo> postInfos = new LinkedList<>();
+				final Map<Long, Packet[]> packets = new HashMap<>();
 
 				postInfos.add(postInfo);
 				packets.put(postInfo.getId(), Packet.fromPost(post));
 
-				final PushThread pushThread = new PushThread(oos, topicName, postInfos,
-						packets, Protocol.NORMAL, (success, callbackTopicName, cause) -> {
-							if (success)
-								userStub.fireEvent(
-										UserEvent.successful(Tag.MESSAGE_SENT, callbackTopicName));
-							else
-								userStub.fireEvent(
-										UserEvent.failed(Tag.MESSAGE_SENT, callbackTopicName, cause));
-						});
+				final Thread pushThread = new eventDeliverySystem.thread.PushThread(oos, topicName,
+						postInfos, packets, Protocol.NORMAL, (callbackSuccess, callbackTopicName,
+															  callbackCause) -> {
+					if (callbackSuccess)
+						userStub.fireEvent(UserEvent.successful(eventTag, callbackTopicName));
+					else {
+						Exception e = new ServerException(
+								"Connection to server lost", callbackCause);
+						userStub.fireEvent(UserEvent.failed(eventTag, callbackTopicName, e));
+					}
+				});
 
 				pushThread.run();
 
+				userStub.fireEvent(UserEvent.successful(eventTag, topicName));
+
+			} catch (final ServerException e) {
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
+
 			} catch (final IOException e) {
-				userStub.fireEvent(UserEvent.failed(Tag.MESSAGE_SENT, topicName, e));
+				Throwable e1 = new ServerException("Connection to server lost", e);
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e1));
 			}
 			LG.out();
 		}

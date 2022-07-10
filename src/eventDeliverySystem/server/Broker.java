@@ -200,8 +200,11 @@ public class Broker implements Runnable, AutoCloseable {
 					LG.sout(start, message.getType(), topicName);
 					LG.in();
 
-					BrokerTopic topic = getTopic(topicName);
-					new PullThread(ois, topic).run();
+					boolean success = topicExists(topicName);
+					oos.writeBoolean(success);
+
+					if (success)
+						new PullThread(ois, getTopic(topicName)).run();
 
 					socket.close();
 					LG.out();
