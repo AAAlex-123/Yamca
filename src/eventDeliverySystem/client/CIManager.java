@@ -68,18 +68,17 @@ class CIManager {
 			oos.flush();
 			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
-			ConnectionInfo actualBrokerCIForTopic;
+			final ConnectionInfo actualBrokerCIForTopic;
 			try {
 				actualBrokerCIForTopic = (ConnectionInfo) ois.readObject();
 			} catch (final ClassNotFoundException e) {
-				e.printStackTrace();
-				actualBrokerCIForTopic = null;
+				throw new RuntimeException(e);
 			}
 
 			return actualBrokerCIForTopic;
 
 		} catch (final IOException e) {
-			throw new ServerException(e);
+			throw new ServerException("Connection to main server failed", e);
 		}
 	}
 }

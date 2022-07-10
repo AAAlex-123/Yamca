@@ -318,7 +318,8 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 				for (final TopicManager.TopicData td : tdMap.values())
 					td.socket.close();
 			} catch (IOException e) {
-				throw new ServerException(e);
+				// TODO: maybe come up with a better message
+				throw new ServerException("Connection to server lost", e);
 			}
 
 			tdMap.clear();

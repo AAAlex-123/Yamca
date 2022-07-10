@@ -3,28 +3,28 @@ package eventDeliverySystem.server;
 import java.io.IOException;
 
 /**
- * Defines an IOException subclass tailored to connections to a server.
+ * Signals that an I/O Exception related to a connection to a Server has occurred.
  *
  * @author Alex Mandelias
  */
 public class ServerException extends IOException {
 
 	/**
-	 * Constructs a ServerExcpetion which is associated with any server.
+	 * Constructs a ServerException with the specified detail message.
 	 *
-	 * @param cause the underlying IOException
+	 * @param message the detail message
 	 */
-	public ServerException(IOException cause) {
-		super("Fatal error: connection to server lost", cause);
+	public ServerException(String message) {
+		super(message);
 	}
 
 	/**
-	 * Constructs a ServerExcpetion which is associated with the server for a Topic.
+	 * Constructs a ServerException with the specified detail message and cause.
 	 *
-	 * @param topicName the name of the Topic
-	 * @param cause     the underlying IOException
+	 * @param message the detail message
+	 * @param cause   the underlying cause
 	 */
-	public ServerException(String topicName, IOException cause) {
-		super("Fatal error: can't connect to server for topic " + topicName, cause);
+	public ServerException(String message, Throwable cause) {
+		super(message, cause);
 	}
 }

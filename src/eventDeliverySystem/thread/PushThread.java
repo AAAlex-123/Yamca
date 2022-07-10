@@ -134,7 +134,7 @@ public class PushThread extends Thread {
 	/**
 	 * Provides a way for the PushThread to pass a message when it has finished
 	 * executing. Right before a PushThread returns, it calls the
-	 * {@link Callback#onCompletion(boolean, String, Exception)} method of the
+	 * {@link Callback#onCompletion(boolean, String, Throwable)} method of the
 	 * Callback provided, if it exists.
 	 *
 	 * @author Alex Mandelias
@@ -148,9 +148,9 @@ public class PushThread extends Thread {
 		 * @param success   {@code true} if the PushThread terminates successfully,
 		 *                  {@code false} otherwise
 		 * @param topicName the name of the Topic to which the PushThread pushed
-		 * @param cause     the Exception that caused success to be {@code false}, {@code null}
+		 * @param cause     the Throwable that caused success to be {@code false}, {@code null}
 		 *                  otherwise
 		 */
-		void onCompletion(boolean success, String topicName, Exception cause);
+		void onCompletion(boolean success, String topicName, Throwable cause);
 	}
 }
