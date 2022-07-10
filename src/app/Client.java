@@ -71,7 +71,7 @@ public class Client {
 			ui = new CrappyUserUI(existing, name, ip, port, dir);
 		} catch (final IOException e) {
 			System.err.printf(
-			        "There was an I/O error either while interacting with the file system or connecting to the server");
+			        "There was an I/O error either while interacting with the file system or connecting to the server%n");
 			e.printStackTrace();
 			return;
 		}

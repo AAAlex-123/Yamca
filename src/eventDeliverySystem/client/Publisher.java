@@ -1,9 +1,5 @@
 package eventDeliverySystem.client;
 
-import static eventDeliverySystem.datastructures.Message.MessageType.CREATE_TOPIC;
-import static eventDeliverySystem.datastructures.Message.MessageType.DATA_PACKET_SEND;
-import static eventDeliverySystem.datastructures.Message.MessageType.DELETE_TOPIC;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -18,6 +14,7 @@ import java.util.Map;
 import eventDeliverySystem.user.User.UserStub;
 import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
+import eventDeliverySystem.datastructures.Message.MessageType;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
@@ -122,7 +119,7 @@ public class Publisher extends ClientNode {
 			oos.flush();
 			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
-			oos.writeObject(new Message(CREATE_TOPIC, topicName));
+			oos.writeObject(new Message(MessageType.CREATE_TOPIC, topicName));
 
 			return ois.readBoolean(); // true or false, successful creation or not
 
@@ -152,7 +149,7 @@ public class Publisher extends ClientNode {
 			oos.flush();
 			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
-			oos.writeObject(new Message(DELETE_TOPIC, topicName));
+			oos.writeObject(new Message(MessageType.DELETE_TOPIC, topicName));
 
 			return ois.readBoolean(); // true or false, successful deletion or not
 
@@ -199,10 +196,12 @@ public class Publisher extends ClientNode {
 				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 				oos.flush();
 
+				// TODO: figure out communication when sending data
+
 				// don't remove the following line: https://stackoverflow.com/questions/72920493/
 				final ObjectInputStream unused = new ObjectInputStream(socket.getInputStream());
 
-				oos.writeObject(new Message(DATA_PACKET_SEND, topicName));
+				oos.writeObject(new Message(MessageType.DATA_PACKET_SEND, topicName));
 
 				final PostInfo            postInfo  = post.getPostInfo();
 				final List<PostInfo>      postInfos = new LinkedList<>();

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.PostInfo;
@@ -32,20 +31,14 @@ public class PushThread extends Thread {
 		 * the same output stream should use the 'WITHOUT_COUNT' protocol.
 		 */
 		KEEP_ALIVE,
-
-		/**
-		 * Just send the data, don't send the amount of data. Should be used in
-		 * conjunction with 'KEEP_ALIVE', for pushing after the Pull Thread has started.
-		 */
-		WITHOUT_COUNT;
 	}
 
 	private final ObjectOutputStream  oos;
-	private final Optional<String>    topicName;
+	private final String              topicName;
 	private final List<PostInfo>      postInfos;
 	private final Map<Long, Packet[]> packets;
 	private final Protocol            protocol;
-	private final Optional<Callback>  callback;
+	private final Callback            callback;
 
 	/**
 	 * Constructs the Thread that, when run, will write some Posts to a stream.
@@ -74,18 +67,24 @@ public class PushThread extends Thread {
 	 *                  of the Pull Thread
 	 * @param callback  the callback to call when this thread finishes execution
 	 *
+	 * @throws NullPointerException if a callback is provided but topicName is {@code null}
+	 *
 	 * @see Protocol
 	 * @see Callback
 	 */
 	public PushThread(ObjectOutputStream stream, String topicName, List<PostInfo> postInfos,
 	        Map<Long, Packet[]> packets, Protocol protocol, Callback callback) {
 		super("PushThread-" + postInfos.size() + "-" + protocol);
+
+		if (callback != null && topicName == null)
+			throw new NullPointerException("topicName can't be null if a callback is provided");
+
 		oos = stream;
-		this.topicName = Optional.ofNullable(topicName);
+		this.topicName = topicName;
 		this.postInfos = postInfos;
 		this.packets = packets;
 		this.protocol = protocol;
-		this.callback = Optional.ofNullable(callback);
+		this.callback = callback;
 	}
 
 	@Override
@@ -93,21 +92,16 @@ public class PushThread extends Thread {
 		LG.sout("%s#run()", getName());
 		LG.in();
 
-		boolean success;
 		try {
 
 			LG.sout("protocol=%s, posts.size()=%d", protocol, postInfos.size());
 			LG.in();
 
-			if (protocol != Protocol.WITHOUT_COUNT) {
-				final int postCount;
-				if (protocol == Protocol.KEEP_ALIVE)
-					postCount = Integer.MAX_VALUE;
-				else
-					postCount = postInfos.size();
+			final int postCount = protocol == Protocol.NORMAL
+					? postInfos.size()
+					: Integer.MAX_VALUE;
 
-				oos.writeInt(postCount);
-			}
+			oos.writeInt(postCount);
 
 			for (final PostInfo postInfo : postInfos) {
 				LG.sout("postInfo=%s", postInfo);
@@ -120,16 +114,18 @@ public class PushThread extends Thread {
 
 			oos.flush();
 
-			success = true;
+			if (callback != null)
+				callback.onCompletion(true, topicName, null);
+
 			LG.out();
 
 		} catch (final IOException e) {
 			System.err.printf("IOException in PushThread#run()%n");
 			e.printStackTrace();
-			success = false;
-		}
 
-		callback.orElse(Callback.EMPTY).onCompletion(success, topicName.orElse(null));
+			if (callback != null)
+				callback.onCompletion(false, topicName, e);
+		}
 
 		LG.out();
 		LG.sout("/%s#run()", getName());
@@ -138,16 +134,13 @@ public class PushThread extends Thread {
 	/**
 	 * Provides a way for the PushThread to pass a message when it has finished
 	 * executing. Right before a PushThread returns, it calls the
-	 * {@link Callback#onCompletion(boolean, String)} method of the Callback
-	 * provided, if it exists.
+	 * {@link Callback#onCompletion(boolean, String, Exception)} method of the
+	 * Callback provided, if it exists.
 	 *
 	 * @author Alex Mandelias
 	 */
 	@FunctionalInterface
-	public static interface Callback {
-
-		/** A Callback that does nothing */
-		static final Callback EMPTY = (success, topicName) -> {};
+	public interface Callback {
 
 		/**
 		 * The code to call when the PushThread finishes executing.
@@ -155,7 +148,9 @@ public class PushThread extends Thread {
 		 * @param success   {@code true} if the PushThread terminates successfully,
 		 *                  {@code false} otherwise
 		 * @param topicName the name of the Topic to which the PushThread pushed
+		 * @param cause     the Exception that caused success to be {@code false}, {@code null}
+		 *                  otherwise
 		 */
-		void onCompletion(boolean success, String topicName);
+		void onCompletion(boolean success, String topicName, Exception cause);
 	}
 }
