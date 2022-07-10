@@ -13,7 +13,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 
-import eventDeliverySystem.User;
+import eventDeliverySystem.user.User;
 import eventDeliverySystem.datastructures.Post;
 
 /**

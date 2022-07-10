@@ -1,4 +1,4 @@
-package eventDeliverySystem;
+package eventDeliverySystem.user;
 
 import java.net.UnknownHostException;
 import java.nio.file.Path;
