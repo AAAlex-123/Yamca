@@ -11,4 +11,6 @@ public interface UserListener {
     void onTopicDeleted(UserEvent e);
 
     void onTopicListened(UserEvent e);
+
+    void onTopicListenStopped(UserEvent e);
 }

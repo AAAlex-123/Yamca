@@ -76,6 +76,7 @@ public class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> 
 
         synchronized (consumerSocketsPerTopic) {
             for (final Socket socket : consumerSocketsPerTopic.get(topicName)) {
+                // TODO: will this crash?
                 socket.getOutputStream().flush();
                 socket.shutdownOutput();
                 socket.close();

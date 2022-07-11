@@ -133,22 +133,15 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	}
 
 	/**
-	 * Closes this Consumer's connection for a Topic.
+	 * Closes this Consumer's connection for a Topic by creating a new Thread that closes that
+	 * connection.
 	 *
 	 * @param topicName the name of the Topic this Consumer already listens to
-	 *
-	 * @return {@code true} if this Consumer successfully started listening to the Topic,
-	 *         {@code false} if no Topic with such name exists
-	 *
-	 * @throws ServerException          if a connection to the server fails
-	 * @throws NoSuchElementException if this Consumer does not listen to a Topic with the given name
 	 */
-	public void stopListeningForTopic(String topicName) throws ServerException, NoSuchElementException {
-		try {
-			topicManager.removeSocket(topicName);
-		} catch (IOException e) {
-			throw new ServerException(topicName, e);
-		}
+	public void stopListeningForTopic(String topicName) {
+		LG.sout("Consumer#stopListeningForTopic(%s)", topicName);
+		Thread thread = new StopListeningForTopicThread(topicName);
+		thread.start();
 	}
 
 	/**
@@ -366,6 +359,29 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			}
 
 			LG.out();
+		}
+	}
+
+	private class StopListeningForTopicThread extends Thread {
+
+		private final Tag eventTag = Tag.TOPIC_LISTEN_STOPPED;
+		private final String topicName;
+
+		public StopListeningForTopicThread(String topicName) {
+			this.topicName = topicName;
+		}
+
+		@Override
+		public void run() {
+			try {
+				Consumer.this.topicManager.removeSocket(topicName);
+				userStub.fireEvent(UserEvent.successful(eventTag, topicName));
+			} catch (NoSuchElementException e) {
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
+			} catch (IOException e) {
+				Throwable e1 = new ServerException("Connection to server lost", e);
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e1));
+			}
 		}
 	}
 }

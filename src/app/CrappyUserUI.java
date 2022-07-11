@@ -96,7 +96,7 @@ public class CrappyUserUI extends JFrame {
 		JTextField[] jtfs = new JTextField[1];
 		addTextFieldsToJPanel(main, jtfs);
 
-		JButton[] buttons = new JButton[4];
+		JButton[] buttons = new JButton[5];
 		createButton("Create", e -> tryPST(() -> user.createTopic(jtfs[0].getText()))
 				, buttons, 0);
 		createButton("Delete", e -> tryPST(() -> user.deleteTopic(jtfs[0].getText()))
@@ -105,6 +105,8 @@ public class CrappyUserUI extends JFrame {
 				, buttons, 2);
 		createButton("Listen", e -> tryPST(() -> user.listenForNewTopic(jtfs[0].getText()))
 				, buttons, 3);
+		createButton("Stop Listen", e -> tryPST(() -> user.stopListeningForTopic(jtfs[0].getText()))
+				, buttons, 4);
 
 		addButtonsToJPanel(main, buttons);
 

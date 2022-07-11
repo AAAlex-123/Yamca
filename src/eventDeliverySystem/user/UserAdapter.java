@@ -28,4 +28,9 @@ public abstract class UserAdapter implements UserListener {
     public void onTopicListened(UserEvent e) {
         // empty so that it can be selectively implemented
     }
+
+    @Override
+    public void onTopicListenStopped(UserEvent e) {
+        // empty so that it can be selectively implemented
+    }
 }

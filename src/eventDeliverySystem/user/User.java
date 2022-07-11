@@ -241,6 +241,17 @@ public class User {
 		return success;
 	}
 
+	public void stopListeningForTopic(String topicName) throws ServerException, FileSystemException {
+		LG.sout("User#stopListeningForTopic(%s)", topicName);
+		LG.in();
+
+		consumer.stopListeningForTopic(topicName);
+		currentProfile.removeTopic(topicName);
+		profileFileSystem.deleteTopic(topicName);
+
+		LG.out();
+	}
+
 	public void addUserListener(UserListener l) {
 		listener.addListener(l);
 	}
@@ -304,6 +315,11 @@ public class User {
 		@Override
 		public void onTopicListened(UserEvent e) {
 			listeners.forEach(l -> l.onTopicListened(e));
+		}
+
+		@Override
+		public void onTopicListenStopped(UserEvent e) {
+			listeners.forEach(l -> l.onTopicListenStopped(e));
 		}
 	}
 
