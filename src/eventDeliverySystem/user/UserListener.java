@@ -12,5 +12,7 @@ public interface UserListener {
 
     void onTopicListened(UserEvent e);
 
+    void onTopicLoaded(UserEvent e);
+
     void onTopicListenStopped(UserEvent e);
 }

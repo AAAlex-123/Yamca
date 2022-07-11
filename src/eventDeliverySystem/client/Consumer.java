@@ -104,7 +104,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		topicManager.close();
 
 		for (final Topic topic : newTopics)
-			listenForTopic(topic);
+			listenForTopic(topic, true);
 	}
 
 	/**
@@ -129,7 +129,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 */
 	public void listenForNewTopic(String topicName) {
 		LG.sout("listenForNewTopic(%s)", topicName);
-		listenForTopic(new Topic(topicName));
+		listenForTopic(new Topic(topicName), false);
 	}
 
 	/**
@@ -148,12 +148,16 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 * Registers an existing Topic for this Consumer to continuously fetch new Posts
 	 * from by creating a new Thread that initialises that connection.
 	 *
-	 * @param topic Topic to fetch from
+	 * @param topic    the Topic to fetch from
+	 * @param existing {@code true} is the Topic already exists, {@code false} if it has just been
+	 *                 created prior to this method call
 	 */
-	private void listenForTopic(Topic topic) {
+	private void listenForTopic(Topic topic, boolean existing) {
 		LG.sout("Consumer#listenForTopic(%s)", topic);
 		topic.subscribe(this);
-		Thread thread = new ListenForTopicThread(topic);
+		Thread thread = existing
+						? new ListenForExistingTopicThread(topic)
+						: new ListenForNewTopicThread(topic);
 		thread.start();
 	}
 
@@ -295,19 +299,19 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		}
 	}
 
-	private class ListenForTopicThread extends Thread {
+	private class ListenForNewTopicThread extends Thread {
 
 		private final Tag eventTag = Tag.TOPIC_LISTENED;
 
 		private final Topic topic;
 
-		public ListenForTopicThread(Topic topic) {
+		public ListenForNewTopicThread(Topic topic) {
 			this.topic = topic;
 		}
 
 		@Override
 		public void run() {
-			LG.sout("ListenForTopicThread#run()");
+			LG.sout("ListenForNewTopicThread#run()");
 			LG.in();
 
 			final String topicName = topic.getName();
@@ -341,11 +345,78 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 				topicManager.addSocket(topic, socket);
 				final Thread pullThread = new PullThread(ois, topic,
 						(callbackSuccess, callbackTopicName, callbackCause) -> {
-					if (success && callbackCause instanceof EOFException) {
+					if (callbackSuccess && callbackCause instanceof EOFException) {
 						userStub.fireEvent(UserEvent.successful(
 								Tag.TOPIC_DELETED, callbackTopicName));
 					}
 				});
+
+				pullThread.start();
+
+				userStub.fireEvent(UserEvent.successful(eventTag, topicName));
+
+			} catch (ServerException e) {
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
+			} catch (final IOException e) {
+				Throwable e1 = new ServerException("Connection to server lost", e);
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e1));
+			}
+
+			LG.out();
+		}
+	}
+
+	private class ListenForExistingTopicThread extends Thread {
+
+		private final Tag eventTag = Tag.TOPIC_LOADED;
+
+		private final Topic topic;
+
+		public ListenForExistingTopicThread(Topic topic) {
+			this.topic = topic;
+		}
+
+		@Override
+		public void run() {
+			LG.sout("ListenForExistingTopicThread#run()");
+			LG.in();
+
+			final String topicName = topic.getName();
+
+			final ConnectionInfo actualBrokerCI;
+			try {
+				actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
+			} catch (ServerException e) {
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
+				return;
+			}
+
+			try {
+				// 'socket' closes at close()
+				final Socket socket = new Socket(
+						actualBrokerCI.getAddress(), actualBrokerCI.getPort());
+
+				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+				oos.flush();
+				final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+
+				oos.writeObject(new Message(MessageType.INITIALISE_CONSUMER, topic.getToken()));
+
+				boolean success = ois.readBoolean();
+
+				if (!success) {
+					socket.close();
+					throw new ServerException("Topic " + topicName + " does not exist");
+				}
+
+				topicManager.addSocket(topic, socket);
+				final Thread pullThread = new PullThread(ois, topic,
+						(callbackSuccess, callbackTopicName, callbackCause) -> {
+							if (success && callbackCause instanceof EOFException) {
+								userStub.fireEvent(UserEvent.successful(
+										Tag.TOPIC_DELETED, callbackTopicName));
+							}
+						});
 
 				pullThread.start();
 

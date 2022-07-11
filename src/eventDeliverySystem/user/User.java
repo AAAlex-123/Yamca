@@ -273,6 +273,9 @@ public class User {
 		case TOPIC_LISTENED:
 			listener.onTopicListened(e);
 			break;
+		case TOPIC_LOADED:
+			listener.onTopicLoaded(e);
+			break;
 		case TOPIC_LISTEN_STOPPED:
 			listener.onTopicListenStopped(e);
 			break;

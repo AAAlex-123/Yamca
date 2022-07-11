@@ -30,6 +30,11 @@ public abstract class UserAdapter implements UserListener {
     }
 
     @Override
+    public void onTopicLoaded(UserEvent e) {
+        // empty so that it can be selectively implemented
+    }
+
+    @Override
     public void onTopicListenStopped(UserEvent e) {
         // empty so that it can be selectively implemented
     }
