@@ -25,7 +25,8 @@ import eventDeliverySystem.util.LG;
  */
 public class User {
 
-	private final BasicListener listener = new BasicListener();
+	private final CompositeListener listener = new CompositeListener();
+	private final UserStub userStub = new UserStub(this);
 
 	private final ProfileFileSystem profileFileSystem;
 	private Profile                 currentProfile;
@@ -88,10 +89,16 @@ public class User {
 	        throws FileSystemException, UnknownHostException {
 		profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
 
-		final UserStub userStub = new UserStub();
 		publisher = new Publisher(serverIP, port, userStub);
 		consumer = new Consumer(serverIP, port, userStub);
 
+		addUserListener(new MessageSentListener());
+		addUserListener(new MessageReceivedListener());
+		addUserListener(new CreateTopicListener());
+		addUserListener(new DeleteTopicListener());
+		addUserListener(new ListenForTopicListener());
+		addUserListener(new LoadTopicListener());
+		addUserListener(new StopListeningForTopicListener());
 	}
 
 	/**
@@ -141,7 +148,12 @@ public class User {
 	 * @see Publisher#push(Post, String)
 	 */
 	public void post(Post post, String topicName) {
+		LG.sout("User#post(%s, %s)", post, topicName);
+		LG.in();
+
 		publisher.push(post, topicName);
+
+		LG.out();
 	}
 
 	/**
@@ -149,44 +161,23 @@ public class User {
 	 * {@link #listenForNewTopic(String)} is called.
 	 *
 	 * @param topicName the name of the Topic to create
-	 *
-	 * @return {@code true} if it was successfully created, {@code false} otherwise
-	 *
-	 * @throws ServerException     if the connection to the server fails
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
-	 *
-	 * @throws IllegalArgumentException if a Topic with the same name already exists
 	 */
-	public boolean createTopic(String topicName) throws ServerException, FileSystemException {
+	public void createTopic(String topicName) {
 		LG.sout("User#createTopic(%s)", topicName);
 		LG.in();
 
-		// TODO: replace code below with listener
-		final boolean success = publisher.createTopic(topicName);
-		LG.sout("success=%s", success);
-		if (success)
-			listenForNewTopic(topicName);
+		publisher.createTopic(topicName);
 
 		LG.out();
-		return success;
 	}
 
-	public boolean deleteTopic(String topicName) throws ServerException, FileSystemException {
+	public void deleteTopic(String topicName) {
 		LG.sout("User#deleteTopic(%s)", topicName);
 		LG.in();
 
-		// TODO: replace code below with listener
-		final boolean success = publisher.deleteTopic(topicName);
-		LG.sout("success=%s", success);
-		if (success) {
-			consumer.stopListeningForTopic(topicName);
-			currentProfile.removeTopic(topicName);
-			profileFileSystem.deleteTopic(topicName);
-		}
+		publisher.deleteTopic(topicName);
 
 		LG.out();
-		return success;
 	}
 
 	/**
@@ -219,35 +210,21 @@ public class User {
 	 * saved to the file system.
 	 *
 	 * @param topicName the name of the Topic to listen for
-	 *
-	 * @return {@code true} if the User successfully started listening to the Topic, {@code false}
-	 *         otherwise
-	 *
-	 * @throws ServerException          if the connection to the server fails
-	 * @throws FileSystemException      if an I/O error occurs while interacting
-	 *                                  with the file system
-	 * @throws NullPointerException     if topic == null
-	 * @throws IllegalArgumentException if a Topic with the same name already exists
 	 */
-	public boolean listenForNewTopic(String topicName) throws ServerException, FileSystemException {
+	public void listenForNewTopic(String topicName) {
+		LG.sout("User#listenForNewTopic(%s)", topicName);
+		LG.in();
 
-		// TODO: replace code below with listener
-		boolean success = consumer.listenForNewTopic(topicName);
-		if (success) {
-			currentProfile.addTopic(topicName);
-			profileFileSystem.createTopic(topicName);
-		}
+		consumer.listenForNewTopic(topicName);
 
-		return success;
+		LG.out();
 	}
 
-	public void stopListeningForTopic(String topicName) throws ServerException, FileSystemException {
+	public void stopListeningForTopic(String topicName) {
 		LG.sout("User#stopListeningForTopic(%s)", topicName);
 		LG.in();
 
 		consumer.stopListeningForTopic(topicName);
-		currentProfile.removeTopic(topicName);
-		profileFileSystem.deleteTopic(topicName);
 
 		LG.out();
 	}
@@ -256,7 +233,7 @@ public class User {
 		listener.addListener(l);
 	}
 
-	public void processEvent(UserEvent e) {
+	private void processEvent(UserEvent e) {
 		switch (e.tag) {
 		case MESSAGE_SENT:
 			listener.onMessageSent(e);
@@ -285,7 +262,20 @@ public class User {
 		}
 	}
 
-	private class BasicListener implements UserListener {
+	public static class UserStub {
+
+		private final User user;
+
+		private UserStub(User user) {
+		   this.user = user;
+		}
+
+		public void fireEvent(UserEvent e) {
+			user.processEvent(e);
+		}
+	}
+
+	private class CompositeListener implements UserListener {
 
 		private final Set<UserListener> listeners = new HashSet<>();
 
@@ -295,18 +285,12 @@ public class User {
 
 		@Override
 		public void onMessageSent(UserEvent e) {
-			String topicName = e.topicName;
-			if (!e.success)
-				LG.sout("MESSAGE FAILED TO SEND AT '%s'", topicName);
 
 			listeners.forEach(l -> l.onMessageSent(e));
 		}
 
 		@Override
 		public void onMessageReceived(UserEvent e) {
-			String topicName = e.topicName;
-			currentProfile.markUnread(topicName);
-			LG.sout("YOU HAVE A NEW MESSAGE AT '%s'", topicName);
 
 			listeners.forEach(l -> l.onMessageReceived(e));
 		}
@@ -327,17 +311,109 @@ public class User {
 		}
 
 		@Override
+		public void onTopicLoaded(UserEvent e) {
+			listeners.forEach(l -> l.onTopicLoaded(e));
+		}
+
+		@Override
 		public void onTopicListenStopped(UserEvent e) {
 			listeners.forEach(l -> l.onTopicListenStopped(e));
 		}
 	}
 
-	public class UserStub {
+	private class MessageSentListener extends UserAdapter {
+		@Override
+		public void onMessageSent(UserEvent e) {
+			if (e.success) {
+				// do nothing
+			} else {
+				LG.sout("MESSAGE FAILED TO SEND AT '%s'", e.topicName);
+				e.getCause().printStackTrace();
+			}
+		}
+	}
 
-		private UserStub() {}
+	private class MessageReceivedListener extends UserAdapter {
+		@Override
+		public void onMessageReceived(UserEvent e) {
+			if (e.success) {
+				String topicName = e.topicName;
+				currentProfile.markUnread(topicName);
+				LG.sout("YOU HAVE A NEW MESSAGE AT '%s'", topicName);
+			} else {
+				e.getCause().printStackTrace();
+			}
+		}
+	}
 
-		public void fireEvent(UserEvent e) {
-			User.this.processEvent(e);
+	private class CreateTopicListener extends UserAdapter {
+		@Override
+		public void onTopicCreated(UserEvent e) {
+			if (e.success) {
+				listenForNewTopic(e.topicName);
+			} else {
+				e.getCause().printStackTrace();
+			}
+		}
+	}
+
+	private class DeleteTopicListener extends UserAdapter {
+		@Override
+		public void onTopicDeleted(UserEvent e) {
+			if (e.success) {
+				consumer.stopListeningForTopic(e.topicName);
+				currentProfile.removeTopic(e.topicName);
+				try {
+					profileFileSystem.deleteTopic(e.topicName);
+				} catch (FileSystemException e1) {
+					User.this.userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
+				}
+			} else {
+				e.getCause().printStackTrace();
+			}
+		}
+	}
+
+	private class ListenForTopicListener extends UserAdapter {
+		@Override
+		public void onTopicListened(UserEvent e) {
+			if (e.success) {
+				currentProfile.addTopic(e.topicName);
+				try {
+					profileFileSystem.createTopic(e.topicName);
+				} catch (FileSystemException e1) {
+					User.this.userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
+				}
+			} else {
+				e.getCause().printStackTrace();
+			}
+		}
+	}
+
+	private class LoadTopicListener extends UserAdapter {
+		@Override
+		public void onTopicLoaded(UserEvent e) {
+			if (e.success) {
+				// do nothing
+			} else {
+				e.getCause().printStackTrace();
+			}
+		}
+	}
+
+	private class StopListeningForTopicListener extends UserAdapter {
+		@Override
+		public void onTopicListenStopped(UserEvent e) {
+			if (e.success) {
+				currentProfile.removeTopic(e.topicName);
+				try {
+					profileFileSystem.deleteTopic(e.topicName);
+				} catch (FileSystemException e1) {
+					User.this.userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
+				}
+			} else {
+				e.getCause().printStackTrace();
+			}
 		}
 	}
 }
