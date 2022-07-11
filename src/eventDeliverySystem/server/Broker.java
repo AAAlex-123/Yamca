@@ -202,6 +202,7 @@ public class Broker implements Runnable, AutoCloseable {
 
 					boolean success = topicExists(topicName);
 					oos.writeBoolean(success);
+					oos.flush();
 
 					if (success)
 						new PullThread(ois, getTopic(topicName)).run();
@@ -257,11 +258,11 @@ public class Broker implements Runnable, AutoCloseable {
 
 					try {
 						oos.writeObject(brokerInfo);
+						oos.flush();
 					} catch (final IOException e) {
 						// do nothing
 					}
 
-					oos.flush();
 					socket.close();
 					LG.out();
 					LG.sout(end, message.getType(), topicName);
@@ -288,8 +289,8 @@ public class Broker implements Runnable, AutoCloseable {
 					}
 
 					oos.writeBoolean(success);
-
 					oos.flush();
+
 					socket.close();
 					LG.out();
 					LG.sout(end, message.getType(), topicName);
@@ -313,8 +314,8 @@ public class Broker implements Runnable, AutoCloseable {
 					LG.sout("success=%s", topicExists);
 
 					oos.writeBoolean(success);
-
 					oos.flush();
+
 					socket.close();
 					LG.out();
 					LG.sout(end, message.getType(), topicName);
