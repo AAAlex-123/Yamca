@@ -218,7 +218,7 @@ public class Broker implements Runnable, AutoCloseable {
 					LG.sout(start, message.getType(), topicName);
 					LG.in();
 
-					final boolean success = registerConsumer(topicName, oos);
+					final boolean success = registerConsumer(topicName, socket);
 
 					LG.sout("success=%s", success);
 
@@ -365,9 +365,9 @@ public class Broker implements Runnable, AutoCloseable {
 			return false;
 		}
 
-		private boolean registerConsumer(String topicName, ObjectOutputStream oos) {
+		private boolean registerConsumer(String topicName, Socket socket) {
 			try {
-				btm.registerConsumer(topicName, oos);
+				btm.registerConsumer(topicName, socket);
 				return true;
 			} catch (NoSuchElementException e) {
 				return false;

@@ -1,5 +1,6 @@
 package eventDeliverySystem.client;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -210,6 +211,18 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 
 			final TopicData td = tdMap.get(topicName);
 
+			// TODO: fix
+			// newPosts = getPostsSince(td.pointer)
+			// td.pointer = getLastPostId()
+			// topic.clear();
+
+			// Possible fix:
+			// replace getPostsSince() with getAllPosts()
+			// remove td.pointer
+
+			// Another fix (preserves pointer and getPostsSince call):
+			// update td.pointer after td.topic.clear();
+
 			LG.sout("td.pointer=%d", td.pointer);
 			final List<Post> newPosts = td.topic.getPostsSince(td.pointer);
 
@@ -249,6 +262,11 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			LG.sout("TopicManager#removeSocket(%s)", topicName);
 			if (!tdMap.containsKey(topicName))
 				throw new NoSuchElementException("No Topic with name " + topicName + " found");
+
+			Socket socket = tdMap.get(topicName).socket;
+			LG.sout("SOCKET IS CLOSED CONSUMER:266: %s", socket.isClosed());
+			if (!socket.isClosed())
+				socket.close();
 
 			tdMap.remove(topicName);
 		}
@@ -328,7 +346,17 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 				}
 
 				topicManager.addSocket(topic, socket);
-				new PullThread(ois, topic).start();
+				final Thread pullThread = new PullThread(ois, topic,
+						(callbackSuccess, callbackTopicName, callbackCause) -> {
+					if (success && callbackCause instanceof EOFException) {
+						userStub.fireEvent(UserEvent.successful(
+								Tag.TOPIC_DELETED, callbackTopicName));
+					}
+				});
+
+				pullThread.start();
+
+				userStub.fireEvent(UserEvent.successful(eventTag, topicName));
 
 			} catch (ServerException e) {
 				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));

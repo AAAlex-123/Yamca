@@ -6,12 +6,13 @@ import eventDeliverySystem.util.LG;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.net.Socket;
 import java.util.*;
 
 public class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> {
 
     private final ITopicDAO postDao;
-    private final Map<String, Set<ObjectOutputStream>> consumerOOSPerTopic = new HashMap<>();
+    private final Map<String, Set<Socket>> consumerSocketsPerTopic = new HashMap<>();
     private final Map<String, BrokerTopic>             topicsByName = new HashMap<>();
 
     public BrokerTopicManager(ITopicDAO postDao) throws IOException {
@@ -27,9 +28,11 @@ public class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> 
 
     @Override
     public void close() throws Exception {
-        for (final Set<ObjectOutputStream> consumerOOSSet : consumerOOSPerTopic.values())
-            for (final ObjectOutputStream consumerOOS : consumerOOSSet)
-                consumerOOS.close();
+        for (final Set<Socket> consumerSocketSet : consumerSocketsPerTopic.values())
+            for (final Socket socket : consumerSocketSet) {
+                socket.shutdownOutput();
+                socket.close();
+            }
     }
 
     @Override
@@ -71,24 +74,25 @@ public class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> 
             topicsByName.remove(topicName);
         }
 
-        synchronized (consumerOOSPerTopic) {
-            for (final ObjectOutputStream oos : consumerOOSPerTopic.get(topicName)) {
-                oos.flush();
-                oos.close();
+        synchronized (consumerSocketsPerTopic) {
+            for (final Socket socket : consumerSocketsPerTopic.get(topicName)) {
+                socket.getOutputStream().flush();
+                socket.shutdownOutput();
+                socket.close();
             }
 
-            consumerOOSPerTopic.get(topicName).clear();
-            consumerOOSPerTopic.remove(topicName);
+            consumerSocketsPerTopic.get(topicName).clear();
+            consumerSocketsPerTopic.remove(topicName);
         }
 
         postDao.deleteTopic(topicName);
     }
 
-    public void registerConsumer(String topicName, ObjectOutputStream oos) throws NoSuchElementException {
+    public void registerConsumer(String topicName, Socket socket) throws NoSuchElementException {
         assertTopicExists(topicName);
 
-        synchronized (consumerOOSPerTopic) {
-            consumerOOSPerTopic.get(topicName).add(oos);
+        synchronized (consumerSocketsPerTopic) {
+            consumerSocketsPerTopic.get(topicName).add(socket);
         }
     }
 
@@ -102,8 +106,8 @@ public class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> 
             topicsByName.put(topicName, topic);
         }
 
-        synchronized (consumerOOSPerTopic) {
-            consumerOOSPerTopic.put(topicName, new HashSet<>());
+        synchronized (consumerSocketsPerTopic) {
+            consumerSocketsPerTopic.put(topicName, new HashSet<>());
         }
     }
 
