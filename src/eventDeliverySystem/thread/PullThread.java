@@ -3,6 +3,7 @@ package eventDeliverySystem.thread;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Packet;
@@ -18,6 +19,7 @@ public class PullThread extends Thread {
 
 	private final ObjectInputStream ois;
 	private final AbstractTopic     topic;
+	private final Callback callback;
 
 	/**
 	 * Constructs the Thread that, when run, will read some Posts from a stream and
@@ -27,9 +29,14 @@ public class PullThread extends Thread {
 	 * @param topic  the Topic in which the new Posts will be added
 	 */
 	public PullThread(ObjectInputStream stream, AbstractTopic topic) {
+		this(stream, topic, null);
+	}
+
+	public PullThread(ObjectInputStream stream, AbstractTopic topic, Callback callback) {
 		super("PullThread-" + topic.getName());
 		ois = stream;
 		this.topic = topic;
+		this.callback = callback;
 	}
 
 	@Override
@@ -60,15 +67,21 @@ public class PullThread extends Thread {
 				LG.out();
 			}
 
+			if (callback != null) {
+				callback.onCompletion(true, topic.getName(), null);
+			}
+
 		} catch (final EOFException e) {
 			LG.sout("EOF EXCEPTION ON PULL THREAD");
-			try {
-				ois.close();
-			} catch (IOException e1) {
-				e1.printStackTrace();
+			if (callback != null) {
+				callback.onCompletion(true, topic.getName(), e);
 			}
 		} catch (final ClassNotFoundException | IOException e) {
+			LG.err("IOException in PullThread#run()");
 			e.printStackTrace();
+
+			if (callback != null)
+				callback.onCompletion(false, topic.getName(), e);
 		}
 
 		LG.sout("/%s#run()", getName());
