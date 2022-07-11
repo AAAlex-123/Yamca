@@ -120,7 +120,7 @@ public class PushThread extends Thread {
 			LG.out();
 
 		} catch (final IOException e) {
-			System.err.printf("IOException in PushThread#run()%n");
+			LG.err("IOException in PushThread#run()%n");
 			e.printStackTrace();
 
 			if (callback != null)

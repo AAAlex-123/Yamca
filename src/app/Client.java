@@ -38,7 +38,7 @@ public class Client {
 		LG.args(args);
 
 		if (args.length != 5) {
-			System.out.println(Client.USAGE);
+			LG.sout(Client.USAGE);
 			return;
 		}
 
@@ -51,7 +51,7 @@ public class Client {
 		case "-l":
 			break;
 		default:
-			System.out.println(Client.USAGE);
+			LG.sout(Client.USAGE);
 			return;
 		}
 
@@ -60,7 +60,7 @@ public class Client {
 		try {
 			port = Integer.parseInt(args[3]);
 		} catch (final NumberFormatException e) {
-			System.err.printf("Invalid port: %s", args[3]);
+			LG.err("Invalid port: %s", args[3]);
 			return;
 		}
 
@@ -70,8 +70,8 @@ public class Client {
 		try {
 			ui = new CrappyUserUI(existing, name, ip, port, dir);
 		} catch (final IOException e) {
-			System.err.printf(
-			        "There was an I/O error either while interacting with the file system or connecting to the server%n");
+			LG.err("There was an I/O error either while interacting with the file system or"
+				   + "connecting to the server");
 			e.printStackTrace();
 			return;
 		}

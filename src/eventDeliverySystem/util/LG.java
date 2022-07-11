@@ -12,6 +12,7 @@ import java.net.Socket;
 public class LG {
 
 	private static final PrintStream out = System.out;
+	private static final PrintStream err = System.err;
 	private static int tab = 0;
 
 	private LG() {}
@@ -28,8 +29,13 @@ public class LG {
 		for (int i = 0; i < LG.tab; i++)
 			out.print("\t");
 
-		out.printf(format + "\n", args);
+		out.printf(String.format("%s%n", format), args);
 		out.flush();
+	}
+
+	public static void err(String format, Object... args) {
+		err.printf(String.format("ERROR: %s%n", format), args);
+		err.flush();
 	}
 
 	/** Adds a level of indentation to all future prints */

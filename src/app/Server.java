@@ -48,7 +48,7 @@ public class Server {
 			case 3:
 				break;
 			default:
-				System.out.println(Server.USAGE);
+				LG.sout(Server.USAGE);
 				return;
 		}
 
@@ -71,7 +71,7 @@ public class Server {
 				throw new IllegalArgumentException(e);
 
 			} catch (IllegalArgumentException e) {
-				System.err.printf("Invalid port number: %s", args[ARG_PORT]);
+				LG.err("Invalid port number: %s", args[ARG_PORT]);
 				return;
 			}
 		}
@@ -80,7 +80,7 @@ public class Server {
 		try {
 			postDao = new TopicFileSystem(path);
 		} catch (FileSystemException e) {
-			System.err.printf("Path %s does not exist", path);
+			LG.err("Path %s does not exist", path);
 			return;
 		}
 
@@ -95,7 +95,7 @@ public class Server {
 		} catch (InterruptedException e) {
 			// do nothing
 		} catch (IOException e) {
-			System.err.printf("I/O error associated with path %s", path);
+			LG.err("I/O error associated with path %s", path);
 			e.printStackTrace();
 		}
 	}
