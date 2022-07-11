@@ -270,6 +270,12 @@ public class User {
 		case TOPIC_DELETED:
 			listener.onTopicDeleted(e);
 			break;
+		case TOPIC_LISTENED:
+			listener.onTopicListened(e);
+			break;
+		case TOPIC_LISTEN_STOPPED:
+			listener.onTopicListenStopped(e);
+			break;
 		default:
 			throw new IllegalArgumentException(
 					"You forgot to put a case for the new UserEvent#Tag enum");
