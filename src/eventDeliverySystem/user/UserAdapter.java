@@ -23,4 +23,9 @@ public abstract class UserAdapter implements UserListener {
     public void onTopicDeleted(UserEvent e) {
         // empty so that it can be selectively implemented
     }
+
+    @Override
+    public void onTopicListened(UserEvent e) {
+        // empty so that it can be selectively implemented
+    }
 }

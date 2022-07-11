@@ -9,4 +9,6 @@ public interface UserListener {
     void onTopicCreated(UserEvent e);
 
     void onTopicDeleted(UserEvent e);
+
+    void onTopicListened(UserEvent e);
 }

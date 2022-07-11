@@ -1,7 +1,5 @@
 package eventDeliverySystem.client;
 
-import static eventDeliverySystem.datastructures.Message.MessageType.INITIALISE_CONSUMER;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -19,6 +17,7 @@ import eventDeliverySystem.user.UserEvent;
 import eventDeliverySystem.user.UserEvent.Tag;
 import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
+import eventDeliverySystem.datastructures.Message.MessageType;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
@@ -122,20 +121,14 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	}
 
 	/**
-	 * Registers a new Topic for this Consumer to continuously fetch new Posts from.
+	 * Registers a new Topic for this Consumer to continuously fetch new Posts
+	 * from by creating a new Thread that initialises that connection.
 	 *
 	 * @param topicName the name of the Topic to fetch from
-	 *
-	 * @return {@code true} if this Consumer successfully started listening to the Topic,
-	 *         {@code false} if no Topic with such name exists
-	 *
-	 * @throws ServerException          if a connection to the server fails
-	 * @throws IllegalArgumentException if this Consumer already listens to a Topic
-	 *                                  with the same name
 	 */
-	public boolean listenForNewTopic(String topicName) throws ServerException {
+	public void listenForNewTopic(String topicName) {
 		LG.sout("listenForNewTopic(%s)", topicName);
-		return listenForTopic(new Topic(topicName));
+		listenForTopic(new Topic(topicName));
 	}
 
 	/**
@@ -159,50 +152,15 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 
 	/**
 	 * Registers an existing Topic for this Consumer to continuously fetch new Posts
-	 * from.
+	 * from by creating a new Thread that initialises that connection.
 	 *
 	 * @param topic Topic to fetch from
-	 *
-	 * @return {@code true} if this Consumer successfully started listening to the Topic,
-	 * 	       {@code false} if no Topic with such name exists
-	 *
-	 * @throws ServerException          if a connection to the server fails
-	 * @throws IllegalArgumentException if this Consumer already listens to a Topic
-	 *                                  with the same name
 	 */
-	@SuppressWarnings("resource") // 'socket' closes at close()
-	private boolean listenForTopic(Topic topic) throws ServerException {
+	private void listenForTopic(Topic topic) {
+		LG.sout("Consumer#listenForTopic(%s)", topic);
 		topic.subscribe(this);
-
-		Socket       socket    = null;
-		final String topicName = topic.getName();
-
-		final ConnectionInfo ci = topicCIManager.getConnectionInfoForTopic(topicName);
-
-		try {
-			socket = new Socket(ci.getAddress(), ci.getPort()); // 'socket' closes at close()
-
-			final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-			oos.flush();
-			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-
-			oos.writeObject(new Message(INITIALISE_CONSUMER, topic.getToken()));
-			oos.flush();
-
-			boolean success = ois.readBoolean();
-
-			if (success) {
-				topicManager.addSocket(topic, socket);
-				new PullThread(ois, topic).start();
-			} else {
-				socket.close();
-			}
-
-			return success;
-
-		} catch (final IOException e) {
-			throw new ServerException(topicName, e);
-		}
+		Thread thread = new ListenForTopicThread(topic);
+		thread.start();
 	}
 
 	@Override
@@ -323,6 +281,63 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			}
 
 			tdMap.clear();
+		}
+	}
+
+	private class ListenForTopicThread extends Thread {
+
+		private final Tag eventTag = Tag.TOPIC_LISTENED;
+
+		private final Topic topic;
+
+		public ListenForTopicThread(Topic topic) {
+			this.topic = topic;
+		}
+
+		@Override
+		public void run() {
+			LG.sout("ListenForTopicThread#run()");
+			LG.in();
+
+			final String topicName = topic.getName();
+
+			final ConnectionInfo actualBrokerCI;
+			try {
+				actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
+			} catch (ServerException e) {
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
+				return;
+			}
+
+			try {
+				// 'socket' closes at close()
+				final Socket socket = new Socket(
+						actualBrokerCI.getAddress(), actualBrokerCI.getPort());
+
+				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+				oos.flush();
+				final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+
+				oos.writeObject(new Message(MessageType.INITIALISE_CONSUMER, topic.getToken()));
+
+				boolean success = ois.readBoolean();
+
+				if (!success) {
+					socket.close();
+					throw new ServerException("Topic " + topicName + " does not exist");
+				}
+
+				topicManager.addSocket(topic, socket);
+				new PullThread(ois, topic).start();
+
+			} catch (ServerException e) {
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
+			} catch (final IOException e) {
+				Throwable e1 = new ServerException("Connection to server lost", e);
+				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e1));
+			}
+
+			LG.out();
 		}
 	}
 }

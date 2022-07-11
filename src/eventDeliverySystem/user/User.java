@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import app.CrappyUserUI;
 import eventDeliverySystem.client.Consumer;
 import eventDeliverySystem.client.Publisher;
 import eventDeliverySystem.datastructures.Post;
@@ -231,6 +230,8 @@ public class User {
 	 * @throws IllegalArgumentException if a Topic with the same name already exists
 	 */
 	public boolean listenForNewTopic(String topicName) throws ServerException, FileSystemException {
+
+		// TODO: replace code below with listener
 		boolean success = consumer.listenForNewTopic(topicName);
 		if (success) {
 			currentProfile.addTopic(topicName);
@@ -298,6 +299,11 @@ public class User {
 		@Override
 		public void onTopicDeleted(UserEvent e) {
 			listeners.forEach(l -> l.onTopicDeleted(e));
+		}
+
+		@Override
+		public void onTopicListened(UserEvent e) {
+			listeners.forEach(l -> l.onTopicListened(e));
 		}
 	}
 
