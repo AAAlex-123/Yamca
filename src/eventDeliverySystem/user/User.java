@@ -285,38 +285,50 @@ public class User {
 
 		@Override
 		public void onMessageSent(UserEvent e) {
+			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
 
 			listeners.forEach(l -> l.onMessageSent(e));
 		}
 
 		@Override
 		public void onMessageReceived(UserEvent e) {
+			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
 
 			listeners.forEach(l -> l.onMessageReceived(e));
 		}
 
 		@Override
 		public void onTopicCreated(UserEvent e) {
+			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
+
 			listeners.forEach(l -> l.onTopicCreated(e));
 		}
 
 		@Override
 		public void onTopicDeleted(UserEvent e) {
+			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
+
 			listeners.forEach(l -> l.onTopicDeleted(e));
 		}
 
 		@Override
 		public void onTopicListened(UserEvent e) {
+			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
+
 			listeners.forEach(l -> l.onTopicListened(e));
 		}
 
 		@Override
 		public void onTopicLoaded(UserEvent e) {
+			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
+
 			listeners.forEach(l -> l.onTopicLoaded(e));
 		}
 
 		@Override
 		public void onTopicListenStopped(UserEvent e) {
+			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
+
 			listeners.forEach(l -> l.onTopicListenStopped(e));
 		}
 	}

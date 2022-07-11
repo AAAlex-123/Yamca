@@ -17,6 +17,11 @@ public class LG {
 
 	private LG() {}
 
+	public static void header(String format, Object... args) {
+		out.printf(String.format("%s%n", format), args);
+		out.flush();
+	}
+
 	/**
 	 * Prints {@code String.format(format + "\n", args)} according to the current
 	 * indentation level
