@@ -13,11 +13,10 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.user.User.UserStub;
 import eventDeliverySystem.user.UserEvent;
 import eventDeliverySystem.user.UserEvent.Tag;
-import eventDeliverySystem.datastructures.ConnectionInfo;
-import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.datastructures.Message.MessageType;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;
@@ -40,7 +39,6 @@ import eventDeliverySystem.util.Subscriber;
  */
 public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 
-	private final UserStub userStub;
 	private final TopicManager topicManager;
 
 	/**
@@ -81,9 +79,8 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 * @param userStub the UserSub object that will be notified when data arrives
 	 */
 	private Consumer(InetAddress ip, int port, UserStub userStub) {
-		super(ip, port);
+		super(ip, port, userStub);
 		topicManager = new TopicManager();
-		this.userStub = userStub;
 	}
 
 	@Override
@@ -204,7 +201,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			LG.sout("Consumer#fetch(%s)", topicName);
 			LG.in();
 			if (!tdMap.containsKey(topicName))
-				throw new NoSuchElementException("No Topic with name " + topicName + " found");
+				throw new NoSuchElementException(ClientNode.getTopicDNEString(topicName));
 
 			final TopicData td = tdMap.get(topicName);
 
@@ -258,7 +255,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		public void removeSocket(String topicName) throws IOException, NoSuchElementException {
 			LG.sout("TopicManager#removeSocket(%s)", topicName);
 			if (!tdMap.containsKey(topicName))
-				throw new NoSuchElementException("No Topic with name " + topicName + " found");
+				throw new NoSuchElementException(ClientNode.getTopicDNEString(topicName));
 
 			Socket socket = tdMap.get(topicName).socket;
 			LG.sout("SOCKET IS CLOSED CONSUMER:266: %s", socket.isClosed());
@@ -279,8 +276,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		private void add(Topic topic) {
 			final String topicName = topic.getName();
 			if (tdMap.containsKey(topicName))
-				throw new IllegalArgumentException(
-				        "Topic with name " + topicName + " already exists");
+				throw new IllegalArgumentException(ClientNode.getTopicAEString(topicName));
 
 			tdMap.put(topicName, new TopicManager.TopicData(topic));
 		}
@@ -292,144 +288,83 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 					td.socket.close();
 			} catch (IOException e) {
 				// TODO: maybe come up with a better message
-				throw new ServerException("Connection to server lost", e);
+				throw new ServerException(ClientNode.CONNECTION_TO_SERVER_LOST_STRING, e);
 			}
 
 			tdMap.clear();
 		}
 	}
 
-	private class ListenForNewTopicThread extends Thread {
-
-		private final Tag eventTag = Tag.TOPIC_LISTENED;
+	private class ListenForNewTopicThread extends ClientThread {
 
 		private final Topic topic;
 
 		public ListenForNewTopicThread(Topic topic) {
+			super(Tag.TOPIC_LISTENED, MessageType.INITIALISE_CONSUMER, topic.getName());
 			this.topic = topic;
 		}
 
 		@Override
-		public void run() {
-			LG.sout("ListenForNewTopicThread#run()");
-			LG.in();
+		protected void doWork(boolean success, Socket socket, ObjectOutputStream oos,
+							  ObjectInputStream ois) throws IOException {
 
-			final String topicName = topic.getName();
-
-			final ConnectionInfo actualBrokerCI;
-			try {
-				actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
-			} catch (ServerException e) {
-				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
-				return;
+			if (!success) {
+				socket.close();
+				throw new ServerException(ClientNode.getTopicDNEString(topicName));
 			}
 
-			try {
-				// 'socket' closes at close()
-				final Socket socket = new Socket(
-						actualBrokerCI.getAddress(), actualBrokerCI.getPort());
+			topicManager.addSocket(topic, socket);
+			final Thread pullThread = new PullThread(ois, topic,
+					(callbackSuccess, callbackTopicName, callbackCause) -> {
+						if (callbackSuccess && callbackCause instanceof EOFException) {
+							userStub.fireEvent(UserEvent.successful(
+									Tag.TOPIC_DELETED, callbackTopicName));
+						}
+					});
 
-				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-				oos.flush();
-				final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+			pullThread.start();
+		}
 
-				oos.writeObject(new Message(MessageType.INITIALISE_CONSUMER, topic.getToken()));
-
-				boolean success = ois.readBoolean();
-
-				if (!success) {
-					socket.close();
-					throw new ServerException("Topic " + topicName + " does not exist");
-				}
-
-				topicManager.addSocket(topic, socket);
-				final Thread pullThread = new PullThread(ois, topic,
-						(callbackSuccess, callbackTopicName, callbackCause) -> {
-					if (callbackSuccess && callbackCause instanceof EOFException) {
-						userStub.fireEvent(UserEvent.successful(
-								Tag.TOPIC_DELETED, callbackTopicName));
-					}
-				});
-
-				pullThread.start();
-
-				userStub.fireEvent(UserEvent.successful(eventTag, topicName));
-
-			} catch (ServerException e) {
-				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
-			} catch (final IOException e) {
-				Throwable e1 = new ServerException("Connection to server lost", e);
-				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e1));
-			}
-
-			LG.out();
+		@Override
+		protected Object getMessageValue() {
+			return topic.getToken();
 		}
 	}
 
-	private class ListenForExistingTopicThread extends Thread {
+	private class ListenForExistingTopicThread extends ClientThread {
 
-		private final Tag eventTag = Tag.TOPIC_LOADED;
+		// NOTE: only tag changes between the ListenFor???TopicThreads to differentiate between events
 
 		private final Topic topic;
 
 		public ListenForExistingTopicThread(Topic topic) {
+			super(Tag.TOPIC_LOADED, MessageType.INITIALISE_CONSUMER, topic.getName());
 			this.topic = topic;
 		}
 
 		@Override
-		public void run() {
-			LG.sout("ListenForExistingTopicThread#run()");
-			LG.in();
-
-			final String topicName = topic.getName();
-
-			final ConnectionInfo actualBrokerCI;
-			try {
-				actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
-			} catch (ServerException e) {
-				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
-				return;
+		protected void doWork(boolean success, Socket socket, ObjectOutputStream oos,
+							  ObjectInputStream ois) throws IOException {
+			if (!success) {
+				socket.close();
+				throw new ServerException(ClientNode.getTopicDNEString(topicName));
 			}
 
-			try {
-				// 'socket' closes at close()
-				final Socket socket = new Socket(
-						actualBrokerCI.getAddress(), actualBrokerCI.getPort());
+			topicManager.addSocket(topic, socket);
+			final Thread pullThread = new PullThread(ois, topic,
+					(callbackSuccess, callbackTopicName, callbackCause) -> {
+						if (callbackSuccess && callbackCause instanceof EOFException) {
+							userStub.fireEvent(UserEvent.successful(
+									Tag.TOPIC_DELETED, callbackTopicName));
+						}
+					});
 
-				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-				oos.flush();
-				final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+			pullThread.start();
+		}
 
-				oos.writeObject(new Message(MessageType.INITIALISE_CONSUMER, topic.getToken()));
-
-				boolean success = ois.readBoolean();
-
-				if (!success) {
-					socket.close();
-					throw new ServerException("Topic " + topicName + " does not exist");
-				}
-
-				topicManager.addSocket(topic, socket);
-				final Thread pullThread = new PullThread(ois, topic,
-						(callbackSuccess, callbackTopicName, callbackCause) -> {
-							if (success && callbackCause instanceof EOFException) {
-								userStub.fireEvent(UserEvent.successful(
-										Tag.TOPIC_DELETED, callbackTopicName));
-							}
-						});
-
-				pullThread.start();
-
-				userStub.fireEvent(UserEvent.successful(eventTag, topicName));
-
-			} catch (ServerException e) {
-				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
-			} catch (final IOException e) {
-				Throwable e1 = new ServerException("Connection to server lost", e);
-				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e1));
-			}
-
-			LG.out();
+		@Override
+		protected Object getMessageValue() {
+			return topic.getToken();
 		}
 	}
 
@@ -447,11 +382,8 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			try {
 				Consumer.this.topicManager.removeSocket(topicName);
 				userStub.fireEvent(UserEvent.successful(eventTag, topicName));
-			} catch (NoSuchElementException e) {
+			} catch (NoSuchElementException | IOException e) {
 				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
-			} catch (IOException e) {
-				Throwable e1 = new ServerException("Connection to server lost", e);
-				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e1));
 			}
 		}
 	}

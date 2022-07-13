@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 import eventDeliverySystem.user.User.UserStub;
-import eventDeliverySystem.datastructures.ConnectionInfo;
-import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.datastructures.Message.MessageType;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;
@@ -35,8 +33,6 @@ import eventDeliverySystem.util.LG;
  * @see Broker
  */
 public class Publisher extends ClientNode {
-
-	private final UserStub userStub;
 
 	/**
 	 * Constructs a Publisher.
@@ -80,8 +76,7 @@ public class Publisher extends ClientNode {
 	 * @param userStub the UserStub object that will be notified if a push fails
 	 */
 	private Publisher(InetAddress ip, int port, UserStub userStub) {
-		super(ip, port);
-		this.userStub = userStub;
+		super(ip, port, userStub);
 	}
 
 	/**
@@ -121,12 +116,9 @@ public class Publisher extends ClientNode {
 		thread.start();
 	}
 
-	private class PushThread extends Thread {
+	private class PushThread extends ClientThread {
 
-		private final Tag eventTag = Tag.MESSAGE_SENT;
-
-		private final Post   post;
-		private final String topicName;
+		private final Post post;
 
 		/**
 		 * Constructs a new PostThread that connects to the actual Broker and starts a
@@ -136,40 +128,16 @@ public class Publisher extends ClientNode {
 		 * @param topicName the name of the Topic to which to push the Post
 		 */
 		public PushThread(Post post, String topicName) {
-			super("PostThread");
+			super(Tag.MESSAGE_SENT, MessageType.DATA_PACKET_SEND, topicName);
 			this.post = post;
-			this.topicName = topicName;
 		}
 
 		@Override
-		public void run() {
-			LG.sout("PostThread#run()");
-			LG.in();
-
-			final ConnectionInfo actualBrokerCI;
+		protected void doWork(boolean success, Socket socket, ObjectOutputStream oos,
+							  ObjectInputStream ois) throws IOException {
 			try {
-				actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
-			} catch (ServerException e) {
-				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
-				return;
-			}
-
-			LG.sout("actualBrokerCI=%s", actualBrokerCI);
-			try (Socket socket = new Socket(actualBrokerCI.getAddress(),
-			        actualBrokerCI.getPort())) {
-
-				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-				oos.flush();
-				// don't remove the following line even if the ois isn't used
-				// https://stackoverflow.com/questions/72920493/
-				final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-
-				oos.writeObject(new Message(MessageType.DATA_PACKET_SEND, topicName));
-
-				boolean success = ois.readBoolean();
-
 				if (!success)
-					throw new ServerException("Topic " + topicName + " does not exist");
+					throw new ServerException(ClientNode.getTopicDNEString(topicName));
 
 				final PostInfo postInfo = post.getPostInfo();
 				final List<PostInfo> postInfos = new LinkedList<>();
@@ -184,122 +152,53 @@ public class Publisher extends ClientNode {
 					if (callbackSuccess)
 						userStub.fireEvent(UserEvent.successful(eventTag, callbackTopicName));
 					else {
-						Exception e = new ServerException(
-								"Connection to server lost", callbackCause);
+						Exception e = new ServerException(ClientNode.CONNECTION_TO_SERVER_LOST_STRING,
+								callbackCause);
 						userStub.fireEvent(UserEvent.failed(eventTag, callbackTopicName, e));
 					}
 				});
 
 				pushThread.run();
 
-				userStub.fireEvent(UserEvent.successful(eventTag, topicName));
-
-			} catch (final ServerException e) {
-				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
-
-			} catch (final IOException e) {
-				Throwable e1 = new ServerException("Connection to server lost", e);
-				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e1));
+			} finally {
+				socket.close();
 			}
-			LG.out();
 		}
 	}
 
-	private class CreateTopicThread extends Thread {
-
-		private final Tag eventTag = Tag.TOPIC_CREATED;
-
-		private final String topicName;
+	private class CreateTopicThread extends ClientThread {
 
 		public CreateTopicThread(String topicName) {
-			super("CreateTopicThread(" + topicName + ")");
-			this.topicName = topicName;
+			super(Tag.TOPIC_CREATED, MessageType.CREATE_TOPIC, topicName);
 		}
 
 		@Override
-		public void run() {
-			LG.sout("CreateTopicThread#run()");
-			LG.in();
-
-			final ConnectionInfo actualBrokerCI;
+		protected void doWork(boolean success, Socket socket, ObjectOutputStream oos,
+							  ObjectInputStream ois) throws IOException {
 			try {
-				actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
-			} catch (ServerException e) {
-				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
-				return;
-			}
-
-			try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
-				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-				oos.flush();
-				final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-
-				oos.writeObject(new Message(MessageType.CREATE_TOPIC, topicName));
-
-				boolean success = ois.readBoolean();
-
 				if (!success)
-					throw new ServerException("Topic " + topicName + " already exists");
-
-				userStub.fireEvent(UserEvent.successful(eventTag, topicName));
-
-			} catch (ServerException e) {
-				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
-			} catch (final IOException e) {
-				Throwable e1 = new ServerException("Connection to server lost", e);
-				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e1));
+					throw new ServerException(ClientNode.getTopicAEString(topicName));
+			} finally {
+				socket.close();
 			}
-
-			LG.out();
 		}
 	}
 
-	private class DeleteTopicThread extends Thread {
-
-		private final Tag eventTag = Tag.TOPIC_DELETED;
-
-		private final String topicName;
+	private class DeleteTopicThread extends ClientThread {
 
 		public DeleteTopicThread(String topicName) {
-			super("DeleteTopicThread(" + topicName + ")");
-			this.topicName = topicName;
+			super(Tag.TOPIC_DELETED, MessageType.DELETE_TOPIC, topicName);
 		}
 
 		@Override
-		public void run() {
-			LG.sout("CreateTopicThread#run()");
-			LG.in();
-
-			final ConnectionInfo actualBrokerCI;
+		protected void doWork(boolean success, Socket socket, ObjectOutputStream oos,
+							  ObjectInputStream ois) throws IOException {
 			try {
-				actualBrokerCI = topicCIManager.getConnectionInfoForTopic(topicName);
-			} catch (ServerException e) {
-				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
-				return;
-			}
-
-			try (Socket socket = new Socket(actualBrokerCI.getAddress(), actualBrokerCI.getPort())) {
-				final ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-				oos.flush();
-				final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-
-				oos.writeObject(new Message(MessageType.DELETE_TOPIC, topicName));
-
-				boolean success = ois.readBoolean();
-
 				if (!success)
-					throw new ServerException("Topic " + topicName + " does not exist");
-
-				userStub.fireEvent(UserEvent.successful(eventTag, topicName));
-
-			} catch (ServerException e) {
-				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
-			} catch (final IOException e) {
-				Throwable e1 = new ServerException("Connection to server lost", e);
-				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e1));
+					throw new ServerException(ClientNode.getTopicDNEString(topicName));
+			} finally {
+				socket.close();
 			}
-
-			LG.out();
 		}
 	}
 }
