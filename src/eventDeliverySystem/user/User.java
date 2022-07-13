@@ -374,12 +374,6 @@ public class User {
 		public void onTopicDeleted(UserEvent e) {
 			if (e.success) {
 				consumer.stopListeningForTopic(e.topicName);
-				currentProfile.removeTopic(e.topicName);
-				try {
-					profileFileSystem.deleteTopic(e.topicName);
-				} catch (FileSystemException e1) {
-					User.this.userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
-				}
 			} else {
 				e.getCause().printStackTrace();
 			}

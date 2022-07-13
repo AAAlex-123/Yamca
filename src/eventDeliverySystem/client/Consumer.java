@@ -314,13 +314,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			}
 
 			topicManager.addSocket(topic, socket);
-			final Thread pullThread = new PullThread(ois, topic,
-					(callbackSuccess, callbackTopicName, callbackCause) -> {
-						if (callbackSuccess && callbackCause instanceof EOFException) {
-							userStub.fireEvent(UserEvent.successful(
-									Tag.TOPIC_DELETED, callbackTopicName));
-						}
-					});
+			final Thread pullThread = new PullThread(ois, topic);
 
 			pullThread.start();
 		}
@@ -351,13 +345,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			}
 
 			topicManager.addSocket(topic, socket);
-			final Thread pullThread = new PullThread(ois, topic,
-					(callbackSuccess, callbackTopicName, callbackCause) -> {
-						if (callbackSuccess && callbackCause instanceof EOFException) {
-							userStub.fireEvent(UserEvent.successful(
-									Tag.TOPIC_DELETED, callbackTopicName));
-						}
-					});
+			final Thread pullThread = new PullThread(ois, topic);
 
 			pullThread.start();
 		}
