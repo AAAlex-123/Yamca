@@ -149,9 +149,7 @@ public class Publisher extends ClientNode {
 				final Thread pushThread = new eventDeliverySystem.thread.PushThread(oos, topicName,
 						postInfos, packets, Protocol.NORMAL, (callbackSuccess, callbackTopicName,
 															  callbackCause) -> {
-					if (callbackSuccess)
-						userStub.fireEvent(UserEvent.successful(eventTag, callbackTopicName));
-					else {
+					if (!callbackSuccess) {
 						Exception e = new ServerException(ClientNode.CONNECTION_TO_SERVER_LOST_STRING,
 								callbackCause);
 						userStub.fireEvent(UserEvent.failed(eventTag, callbackTopicName, e));
