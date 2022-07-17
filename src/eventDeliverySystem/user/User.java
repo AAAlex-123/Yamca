@@ -14,6 +14,7 @@ import eventDeliverySystem.filesystem.FileSystemException;
 import eventDeliverySystem.filesystem.Profile;
 import eventDeliverySystem.filesystem.ProfileFileSystem;
 import eventDeliverySystem.server.ServerException;
+import eventDeliverySystem.user.UserEvent.Tag;
 import eventDeliverySystem.util.LG;
 
 /**
@@ -151,7 +152,13 @@ public class User {
 		LG.sout("User#post(%s, %s)", post, topicName);
 		LG.in();
 
-		publisher.push(post, topicName);
+		if (!isUserSubscribed(topicName)) {
+			userStub.fireEvent(UserEvent.failed(Tag.MESSAGE_SENT, topicName,
+					new NoSuchElementException("This User can't post to Topic " + topicName
+											   + " because they aren't subscribed to it")));
+		} else {
+			publisher.push(post, topicName);
+		}
 
 		LG.out();
 	}
@@ -175,7 +182,13 @@ public class User {
 		LG.sout("User#deleteTopic(%s)", topicName);
 		LG.in();
 
-		publisher.deleteTopic(topicName);
+		if (!isUserSubscribed(topicName)) {
+			userStub.fireEvent(UserEvent.failed(Tag.TOPIC_DELETED, topicName,
+					new NoSuchElementException("This User can't delete Topic " + topicName
+											   + " because they aren't subscribed to it")));
+		} else {
+			publisher.deleteTopic(topicName);
+		}
 
 		LG.out();
 	}
@@ -190,7 +203,7 @@ public class User {
 	 *                                the file system
 	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
-	public void pull(String topicName) throws FileSystemException {
+	public void pull(String topicName) throws FileSystemException, NoSuchElementException {
 		LG.sout("User#pull from Topic '%s'", topicName);
 		LG.in();
 		final List<Post> newPosts = consumer.pull(topicName); // sorted from earliest to latest
@@ -201,6 +214,7 @@ public class User {
 			LG.sout("Saving Post '%s'", post);
 			profileFileSystem.savePost(post, topicName);
 		}
+
 		LG.out();
 	}
 
@@ -224,13 +238,23 @@ public class User {
 		LG.sout("User#stopListeningForTopic(%s)", topicName);
 		LG.in();
 
-		consumer.stopListeningForTopic(topicName);
+		if (!isUserSubscribed(topicName)) {
+			userStub.fireEvent(UserEvent.failed(Tag.TOPIC_LISTEN_STOPPED, topicName,
+					new NoSuchElementException("This User can't unsubscribe from Topic " + topicName
+											   + " because they aren't subscribed to it")));
+		} else {
+			consumer.stopListeningForTopic(topicName);
+		}
 
 		LG.out();
 	}
 
 	public void addUserListener(UserListener l) {
 		listener.addListener(l);
+	}
+
+	private boolean isUserSubscribed(String topicName) {
+		return currentProfile.getTopics().stream().anyMatch(topic -> topic.getName().equals(topicName));
 	}
 
 	private void processEvent(UserEvent e) {
