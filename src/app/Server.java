@@ -1,8 +1,11 @@
 package app;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Properties;
 import java.util.concurrent.ThreadLocalRandom;
 
 import eventDeliverySystem.datastructures.ITopicDAO;
@@ -18,16 +21,21 @@ import eventDeliverySystem.util.LG;
  */
 public class Server {
 
-	private static final int ARG_PATH = 0, ARG_IP = 1, ARG_PORT = 2;
+	// ARG_FLAG and ARG_PATH should be in the same position as ARG_IP and ARG_PORT respectively
+	private static final int ARG_BROKER_DIR = 0, ARG_IP = 1, ARG_PORT = 2, ARG_FLAG = 1, ARG_PATH = 2;
 
 	private static final String USAGE = "Usage:\n"
-	        + "\t   java app.Server <path>\n"
-	        + "\tor java app.Server <path> <ip> <port>\n"
+	        + "\t   java app.Server <broker_dir>\n"
+	        + "\tor java app.Server <broker_dir> <ip> <port>\n"
+	        + "\tor java app.Server <broker_dir> -f <path>\n"
 	        + "\n"
-	        + "Arguments for servers after the first one:\n"
-			+ "\t<path>\t\t the directory where the topics will be saved for this server\n"
+	        + "Options:\n"
+	        + "\t-f\tread connection configuration from file\n"
+	        + "Where:\n"
+	        + "\t<broker_dir>\t\t the directory where the topics will be saved for this server\n"
 	        + "\t<ip>\t\tthe ip of the first server (run 'ipconfig' on the first server)\n"
-	        + "\t<port>\t\tthe port the first server listens to (See 'Broker Port' in the first server's console)\n";
+	        + "\t<port>\t\tthe port the first server listens to (See 'Broker Port' in the first server's console)\n"
+	        + "\t<path>\t\tthe file with the configuration";
 
 	private Server() {}
 
@@ -53,7 +61,7 @@ public class Server {
 		}
 
 		final boolean leader = args.length == 1;
-		final Path    path = new File(args[ARG_PATH]).getAbsoluteFile().toPath();
+		final Path    path = new File(args[ARG_BROKER_DIR]).getAbsoluteFile().toPath();
 		final String ip;
 		final int port;
 
@@ -61,9 +69,30 @@ public class Server {
 			ip = "not-used";
 			port = -1;
 		} else {
-			ip = args[ARG_IP];
+			final String stringPort;
+			if (args[ARG_FLAG].equals("-f")) {
+				Properties props = new Properties();
+				try (FileInputStream fis = new FileInputStream(args[ARG_PATH])){
+					props.load(fis);
+				} catch (FileNotFoundException e) {
+					LG.err("Could not find configuration file: %s", args[ARG_PATH]);
+					return;
+				} catch (IOException e) {
+					LG.err("Unexpected Error while reading configuration from file: %s. Please try "
+						   + "manually inputting ip and port.", args[ARG_PATH]);
+					return;
+				}
+
+				ip = props.getProperty("ip");
+				stringPort = props.getProperty("port");
+
+			} else {
+				ip = args[ARG_IP];
+				stringPort = args[ARG_PORT];
+			}
+
 			try {
-				port = Integer.parseInt(args[ARG_PORT]);
+				port = Integer.parseInt(stringPort);
 				if (port < 0 || port > 65_535)
 					throw new IllegalArgumentException();
 
@@ -71,7 +100,7 @@ public class Server {
 				throw new IllegalArgumentException(e);
 
 			} catch (IllegalArgumentException e) {
-				LG.err("Invalid port number: %s", args[ARG_PORT]);
+				LG.err("Invalid port number: %s", stringPort);
 				return;
 			}
 		}

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -64,13 +65,14 @@ public class Broker implements Runnable, AutoCloseable {
 		try {
 			clientRequestSocket = new ServerSocket(29621, // PortManager.getNewAvailablePort(),
 			        Broker.MAX_CONNECTIONS);
-			brokerRequestSocket = new ServerSocket(PortManager.getNewAvailablePort(),
+			brokerRequestSocket = new ServerSocket(29622, // PortManager.getNewAvailablePort(),
 			        Broker.MAX_CONNECTIONS);
 		} catch (final IOException e) {
 			throw new UncheckedIOException("Could not open server socket: ", e);
 		}
 
 		LG.sout("Broker connected at:");
+		LG.sout("Server IP   - %s", InetAddress.getLocalHost().getHostAddress());
 		LG.socket("Client", clientRequestSocket);
 		LG.socket("Broker", brokerRequestSocket);
 	}

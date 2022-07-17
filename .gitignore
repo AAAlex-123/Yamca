@@ -2,6 +2,7 @@
 assets/
 brokers/
 users/
+main_broker.properties
 
 
 
