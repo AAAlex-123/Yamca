@@ -175,12 +175,10 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 
 		private static class TopicData {
 			private final Topic topic;
-			private long        pointer;
 			private Socket      socket;
 
 			public TopicData(Topic topic) {
 				this.topic = topic;
-				pointer = topic.getLastPostId();
 				socket = null;
 			}
 		}
@@ -203,27 +201,12 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			if (!tdMap.containsKey(topicName))
 				throw new NoSuchElementException(ClientNode.getTopicDNEString(topicName));
 
-			final TopicData td = tdMap.get(topicName);
+			final Topic topic = tdMap.get(topicName).topic;
 
-			// TODO: fix
-			// newPosts = getPostsSince(td.pointer)
-			// td.pointer = getLastPostId()
-			// topic.clear();
-
-			// Possible fix:
-			// replace getPostsSince() with getAllPosts()
-			// remove td.pointer
-
-			// Another fix (preserves pointer and getPostsSince call):
-			// update td.pointer after td.topic.clear();
-
-			LG.sout("td.pointer=%d", td.pointer);
-			final List<Post> newPosts = td.topic.getPostsSince(td.pointer);
-
+			final List<Post> newPosts = topic.getAllPosts();
 			LG.sout("newPosts.size()=%d", newPosts.size());
-			td.pointer = td.topic.getLastPostId();
 
-			td.topic.clear();
+			topic.clear();
 
 			LG.out();
 			return newPosts;

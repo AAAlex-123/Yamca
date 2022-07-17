@@ -126,6 +126,7 @@ public class Topic extends AbstractTopic {
 	/** Clears this Topic by removing all Posts */
 	public void clear() {
 		postList.clear();
+		indexPerPostId.clear();
 		post(dummyPost);
 	}
 
