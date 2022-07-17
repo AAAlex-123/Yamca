@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -166,14 +167,16 @@ public class TopicFileSystem implements ITopicDAO {
 	private AbstractTopic readTopic(String topicName) throws FileSystemException {
 		final List<Post> loadedPosts = new LinkedList<>();
 
-		final Path firstPost = getFirstPost(topicName);
-		for (Path postFile = firstPost; postFile != null; postFile = getNextFile(postFile,
+		final Path latestPost = getFirstPost(topicName); // from latest to earliest
+		for (Path postFile = latestPost; postFile != null; postFile = getNextFile(postFile,
 																				 topicName)) {
 			final String   filename   = postFile.getFileName().toString();
 			final PostInfo postInfo   = TopicFileSystem.getPostInfoFromFileName(filename);
 			final Post     loadedPost = TopicFileSystem.readPost(postInfo, postFile);
 			loadedPosts.add(loadedPost);
 		}
+
+		Collections.reverse(loadedPosts); // from earliest to latest
 
 		return AbstractTopic.createSimple(topicName, loadedPosts);
 	}

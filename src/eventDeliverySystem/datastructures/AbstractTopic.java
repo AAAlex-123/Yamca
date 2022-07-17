@@ -197,8 +197,8 @@ public abstract class AbstractTopic implements Iterable<Post> {
 				final Post     completedPost = Post.fromPackets(data, currPI);
 				posts.add(completedPost);
 
-				currPackets.clear();
 				currPI = null;
+				currPackets.clear();
 			}
 		}
 

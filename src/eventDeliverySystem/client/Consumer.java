@@ -175,10 +175,12 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 
 		private static class TopicData {
 			private final Topic topic;
+			private long pointer;
 			private Socket      socket;
 
 			public TopicData(Topic topic) {
 				this.topic = topic;
+				pointer = topic.getLastPostId();
 				socket = null;
 			}
 		}
@@ -201,12 +203,14 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			if (!tdMap.containsKey(topicName))
 				throw new NoSuchElementException(ClientNode.getTopicDNEString(topicName));
 
-			final Topic topic = tdMap.get(topicName).topic;
+			final TopicData td = tdMap.get(topicName);
 
-			final List<Post> newPosts = topic.getAllPosts();
+			LG.sout("td.pointer=%d", td.pointer);
+			final List<Post> newPosts = td.topic.getPostsSince(td.pointer);
 			LG.sout("newPosts.size()=%d", newPosts.size());
 
-			topic.clear();
+			td.topic.clear();
+			td.pointer = td.topic.getLastPostId();
 
 			LG.out();
 			return newPosts;

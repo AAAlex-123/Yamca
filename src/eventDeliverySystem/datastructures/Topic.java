@@ -38,8 +38,6 @@ public class Topic extends AbstractTopic {
 	private final List<Post>         postList;
 	private final Map<Long, Integer> indexPerPostId;
 
-	private Post lastPost;
-
 	public Topic(AbstractTopic topic) {
 		this(topic.getName());
 		for (Post post : topic) {
@@ -66,7 +64,6 @@ public class Topic extends AbstractTopic {
 		super(name);
 		postList = new LinkedList<>();
 		indexPerPostId = new HashMap<>();
-		lastPost = null;
 		post(dummyPost);
 
 		post(posts);
@@ -79,7 +76,7 @@ public class Topic extends AbstractTopic {
 	 *         there are no Posts in this Topic
 	 */
 	public long getLastPostId() {
-		return lastPost.getPostInfo().getId();
+		return postList.get(postList.size() - 1).getPostInfo().getId();
 	}
 
 	private final List<Packet> currPackets = new LinkedList<>();
@@ -88,7 +85,7 @@ public class Topic extends AbstractTopic {
 	@Override
 	public void postHook(PostInfo postInfo) {
 		if (!currPackets.isEmpty() || (currPI != null))
-			throw new IllegalStateException("Recieved PostInfo while more Packets remain");
+			throw new IllegalStateException("Received PostInfo while more Packets remain");
 
 		currPI = postInfo;
 	}
@@ -120,7 +117,6 @@ public class Topic extends AbstractTopic {
 	private void post(Post post) {
 		postList.add(post);
 		indexPerPostId.put(post.getPostInfo().getId(), postList.size() - 1);
-		lastPost = post;
 	}
 
 	/** Clears this Topic by removing all Posts */
