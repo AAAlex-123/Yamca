@@ -280,16 +280,6 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		}
 	}
 
-	private final Callback pullThreadCallback = (cbSuccess, cbTopicName, cbCause) -> {
-		if (cbSuccess) {
-			if (cbCause instanceof EOFException) {
-				userStub.fireEvent(UserEvent.successful(Tag.TOPIC_DELETED, cbTopicName));
-			} else if (cbCause instanceof SocketException) {
-				userStub.fireEvent(UserEvent.successful(Tag.TOPIC_LISTEN_STOPPED, cbTopicName));
-			}
-		}
-	};
-
 	private class ListenForNewTopicThread extends ClientThread {
 
 		private final Topic topic;
@@ -308,9 +298,16 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 				throw new ServerException(ClientNode.getTopicDNEString(topicName));
 			}
 
-			topicManager.addSocket(topic, socket);
-			final Thread pullThread = new PullThread(ois, topic, pullThreadCallback);
-
+			final Thread pullThread = new PullThread(ois, topic, (cbSuccess, cbTopicName, cbCause) -> {
+				if (cbSuccess) {
+					topicManager.addSocket(topic, socket);
+					if (cbCause instanceof EOFException) {
+						userStub.fireEvent(UserEvent.successful(Tag.TOPIC_DELETED, cbTopicName));
+					} else if (cbCause instanceof SocketException) {
+						userStub.fireEvent(UserEvent.successful(Tag.TOPIC_LISTEN_STOPPED, cbTopicName));
+					}
+				}
+			});
 			pullThread.start();
 		}
 
@@ -339,9 +336,16 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 				throw new ServerException(ClientNode.getTopicDNEString(topicName));
 			}
 
-			topicManager.addSocket(topic, socket);
-			final Thread pullThread = new PullThread(ois, topic, pullThreadCallback);
-
+			final Thread pullThread = new PullThread(ois, topic, (cbSuccess, cbTopicName, cbCause) -> {
+				if (cbSuccess) {
+					topicManager.addSocket(topic, socket);
+					if (cbCause instanceof EOFException) {
+						userStub.fireEvent(UserEvent.successful(Tag.TOPIC_DELETED, cbTopicName));
+					} else if (cbCause instanceof SocketException) {
+						userStub.fireEvent(UserEvent.successful(Tag.TOPIC_LISTEN_STOPPED, cbTopicName));
+					}
+				}
+			});
 			pullThread.start();
 		}
 
