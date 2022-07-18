@@ -185,7 +185,7 @@ public class Publisher extends ClientNode {
 	private class DeleteTopicThread extends ClientThread {
 
 		public DeleteTopicThread(String topicName) {
-			super(Tag.TOPIC_DELETED, MessageType.DELETE_TOPIC, topicName);
+			super(Tag.SERVER_TOPIC_DELETED, MessageType.DELETE_TOPIC, topicName);
 		}
 
 		@Override

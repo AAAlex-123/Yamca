@@ -3,7 +3,7 @@ package eventDeliverySystem.thread;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.net.SocketException;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Packet;
@@ -71,11 +71,13 @@ public class PullThread extends Thread {
 				callback.onCompletion(true, topic.getName(), null);
 			}
 
-		} catch (final EOFException e) {
-			LG.sout("EOF EXCEPTION ON PULL THREAD");
-			if (callback != null) {
+		} catch (final EOFException | SocketException e) {
+			LG.sout("EOF/SOCKET EXCEPTION ON PULL THREAD");
+			e.printStackTrace();
+
+			if (callback != null)
 				callback.onCompletion(true, topic.getName(), e);
-			}
+
 		} catch (final ClassNotFoundException | IOException e) {
 			LG.err("IOException in PullThread#run()");
 			e.printStackTrace();

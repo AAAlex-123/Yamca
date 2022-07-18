@@ -97,6 +97,7 @@ public class User {
 		addUserListener(new MessageReceivedListener());
 		addUserListener(new CreateTopicListener());
 		addUserListener(new DeleteTopicListener());
+		addUserListener(new ServerDeleteTopicListener());
 		addUserListener(new ListenForTopicListener());
 		addUserListener(new LoadTopicListener());
 		addUserListener(new StopListeningForTopicListener());
@@ -271,6 +272,9 @@ public class User {
 		case TOPIC_DELETED:
 			listener.onTopicDeleted(e);
 			break;
+		case SERVER_TOPIC_DELETED:
+			listener.onServerTopicDeleted(e);
+			break;
 		case TOPIC_LISTENED:
 			listener.onTopicListened(e);
 			break;
@@ -286,12 +290,21 @@ public class User {
 		}
 	}
 
+	private void removeTopicLocally(UserEvent e) {
+		currentProfile.removeTopic(e.topicName);
+		try {
+			profileFileSystem.deleteTopic(e.topicName);
+		} catch (FileSystemException e1) {
+			User.this.userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
+		}
+	}
+
 	public static class UserStub {
 
 		private final User user;
 
 		private UserStub(User user) {
-		   this.user = user;
+			this.user = user;
 		}
 
 		public void fireEvent(UserEvent e) {
@@ -333,6 +346,13 @@ public class User {
 			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
 
 			listeners.forEach(l -> l.onTopicDeleted(e));
+		}
+
+		@Override
+		public void onServerTopicDeleted(UserEvent e) {
+			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
+
+			listeners.forEach(l -> l.onServerTopicDeleted(e));
 		}
 
 		@Override
@@ -397,7 +417,18 @@ public class User {
 		@Override
 		public void onTopicDeleted(UserEvent e) {
 			if (e.success) {
-				consumer.stopListeningForTopic(e.topicName);
+				removeTopicLocally(e);
+			} else {
+				e.getCause().printStackTrace();
+			}
+		}
+	}
+
+	private class ServerDeleteTopicListener extends UserAdapter {
+		@Override
+		public void onServerTopicDeleted(UserEvent e) {
+			if (e.success) {
+				// do nothing
 			} else {
 				e.getCause().printStackTrace();
 			}
@@ -435,12 +466,7 @@ public class User {
 		@Override
 		public void onTopicListenStopped(UserEvent e) {
 			if (e.success) {
-				currentProfile.removeTopic(e.topicName);
-				try {
-					profileFileSystem.deleteTopic(e.topicName);
-				} catch (FileSystemException e1) {
-					User.this.userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
-				}
+				removeTopicLocally(e);
 			} else {
 				e.getCause().printStackTrace();
 			}

@@ -364,6 +364,7 @@ public class Broker implements Runnable, AutoCloseable {
 				e.printStackTrace();
 			} catch (NoSuchElementException e) {
 				// do nothing specific to NoSuchElementException
+				// should never occur
 			}
 			return false;
 		}

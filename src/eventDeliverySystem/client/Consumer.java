@@ -6,6 +6,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
@@ -13,7 +14,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import eventDeliverySystem.datastructures.Message;
+import eventDeliverySystem.thread.Callback;
 import eventDeliverySystem.user.User.UserStub;
 import eventDeliverySystem.user.UserEvent;
 import eventDeliverySystem.user.UserEvent.Tag;
@@ -244,10 +245,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			if (!tdMap.containsKey(topicName))
 				throw new NoSuchElementException(ClientNode.getTopicDNEString(topicName));
 
-			Socket socket = tdMap.get(topicName).socket;
-			LG.sout("SOCKET IS CLOSED CONSUMER:266: %s", socket.isClosed());
-			if (!socket.isClosed())
-				socket.close();
+			tdMap.get(topicName).socket.close();
 
 			tdMap.remove(topicName);
 		}
@@ -282,6 +280,16 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		}
 	}
 
+	private final Callback pullThreadCallback = (cbSuccess, cbTopicName, cbCause) -> {
+		if (cbSuccess) {
+			if (cbCause instanceof EOFException) {
+				userStub.fireEvent(UserEvent.successful(Tag.TOPIC_DELETED, cbTopicName));
+			} else if (cbCause instanceof SocketException) {
+				userStub.fireEvent(UserEvent.successful(Tag.TOPIC_LISTEN_STOPPED, cbTopicName));
+			}
+		}
+	};
+
 	private class ListenForNewTopicThread extends ClientThread {
 
 		private final Topic topic;
@@ -301,7 +309,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			}
 
 			topicManager.addSocket(topic, socket);
-			final Thread pullThread = new PullThread(ois, topic);
+			final Thread pullThread = new PullThread(ois, topic, pullThreadCallback);
 
 			pullThread.start();
 		}
@@ -332,7 +340,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			}
 
 			topicManager.addSocket(topic, socket);
-			final Thread pullThread = new PullThread(ois, topic);
+			final Thread pullThread = new PullThread(ois, topic, pullThreadCallback);
 
 			pullThread.start();
 		}
@@ -356,7 +364,6 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		public void run() {
 			try {
 				Consumer.this.topicManager.removeSocket(topicName);
-				userStub.fireEvent(UserEvent.successful(eventTag, topicName));
 			} catch (NoSuchElementException | IOException e) {
 				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
 			}
