@@ -27,7 +27,7 @@ import eventDeliverySystem.util.LG;
 public class User {
 
 	private final CompositeListener listener = new CompositeListener();
-	private final UserStub userStub = new UserStub(this);
+	private final UserStub userStub = new UserStub();
 
 	private final ProfileFileSystem profileFileSystem;
 	private Profile                 currentProfile;
@@ -93,14 +93,7 @@ public class User {
 		publisher = new Publisher(serverIP, port, userStub);
 		consumer = new Consumer(serverIP, port, userStub);
 
-		addUserListener(new MessageSentListener());
-		addUserListener(new MessageReceivedListener());
-		addUserListener(new CreateTopicListener());
-		addUserListener(new DeleteTopicListener());
-		addUserListener(new ServerDeleteTopicListener());
-		addUserListener(new ListenForTopicListener());
-		addUserListener(new LoadTopicListener());
-		addUserListener(new StopListeningForTopicListener());
+		addUserListener(new BasicListener());
 	}
 
 	/**
@@ -290,29 +283,13 @@ public class User {
 		}
 	}
 
-	private void removeTopicLocally(UserEvent e) {
-		currentProfile.removeTopic(e.topicName);
-		try {
-			profileFileSystem.deleteTopic(e.topicName);
-		} catch (FileSystemException e1) {
-			User.this.userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
-		}
-	}
-
-	public static class UserStub {
-
-		private final User user;
-
-		private UserStub(User user) {
-			this.user = user;
-		}
-
+	public class UserStub {
 		public void fireEvent(UserEvent e) {
-			user.processEvent(e);
+			User.this.processEvent(e);
 		}
 	}
 
-	private class CompositeListener implements UserListener {
+	private static class CompositeListener implements UserListener {
 
 		private final Set<UserListener> listeners = new HashSet<>();
 
@@ -322,62 +299,67 @@ public class User {
 
 		@Override
 		public void onMessageSent(UserEvent e) {
-			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
+			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onMessageSent(e));
 		}
 
 		@Override
 		public void onMessageReceived(UserEvent e) {
-			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
+			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onMessageReceived(e));
 		}
 
 		@Override
 		public void onTopicCreated(UserEvent e) {
-			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
+			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onTopicCreated(e));
 		}
 
 		@Override
 		public void onTopicDeleted(UserEvent e) {
-			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
+			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onTopicDeleted(e));
 		}
 
 		@Override
 		public void onServerTopicDeleted(UserEvent e) {
-			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
+			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onServerTopicDeleted(e));
 		}
 
 		@Override
 		public void onTopicListened(UserEvent e) {
-			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
+			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onTopicListened(e));
 		}
 
 		@Override
 		public void onTopicLoaded(UserEvent e) {
-			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
+			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onTopicLoaded(e));
 		}
 
 		@Override
 		public void onTopicListenStopped(UserEvent e) {
-			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
+			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onTopicListenStopped(e));
 		}
+
+		private static void log(UserEvent e) {
+			LG.header("%s - %s - %s", e.tag, e.topicName, e.success);
+		}
 	}
 
-	private class MessageSentListener extends UserAdapter {
+	private class BasicListener implements UserListener {
+
 		@Override
 		public void onMessageSent(UserEvent e) {
 			if (e.success) {
@@ -387,9 +369,7 @@ public class User {
 				e.getCause().printStackTrace();
 			}
 		}
-	}
 
-	private class MessageReceivedListener extends UserAdapter {
 		@Override
 		public void onMessageReceived(UserEvent e) {
 			if (e.success) {
@@ -400,9 +380,7 @@ public class User {
 				e.getCause().printStackTrace();
 			}
 		}
-	}
 
-	private class CreateTopicListener extends UserAdapter {
 		@Override
 		public void onTopicCreated(UserEvent e) {
 			if (e.success) {
@@ -411,9 +389,7 @@ public class User {
 				e.getCause().printStackTrace();
 			}
 		}
-	}
 
-	private class DeleteTopicListener extends UserAdapter {
 		@Override
 		public void onTopicDeleted(UserEvent e) {
 			if (e.success) {
@@ -422,9 +398,7 @@ public class User {
 				e.getCause().printStackTrace();
 			}
 		}
-	}
 
-	private class ServerDeleteTopicListener extends UserAdapter {
 		@Override
 		public void onServerTopicDeleted(UserEvent e) {
 			if (e.success) {
@@ -433,9 +407,7 @@ public class User {
 				e.getCause().printStackTrace();
 			}
 		}
-	}
 
-	private class ListenForTopicListener extends UserAdapter {
 		@Override
 		public void onTopicListened(UserEvent e) {
 			if (e.success) {
@@ -449,9 +421,7 @@ public class User {
 				e.getCause().printStackTrace();
 			}
 		}
-	}
 
-	private class LoadTopicListener extends UserAdapter {
 		@Override
 		public void onTopicLoaded(UserEvent e) {
 			if (e.success) {
@@ -460,15 +430,22 @@ public class User {
 				e.getCause().printStackTrace();
 			}
 		}
-	}
 
-	private class StopListeningForTopicListener extends UserAdapter {
 		@Override
 		public void onTopicListenStopped(UserEvent e) {
 			if (e.success) {
 				removeTopicLocally(e);
 			} else {
 				e.getCause().printStackTrace();
+			}
+		}
+
+		private void removeTopicLocally(UserEvent e) {
+			currentProfile.removeTopic(e.topicName);
+			try {
+				profileFileSystem.deleteTopic(e.topicName);
+			} catch (FileSystemException e1) {
+				User.this.userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
 			}
 		}
 	}
