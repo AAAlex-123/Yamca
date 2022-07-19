@@ -27,6 +27,17 @@ public class CrappyUserUI extends JFrame {
 
 	private final transient User user;
 
+	/**
+	 * Creates a Crappy User UI.
+	 *
+	 * @param existing {@code true} if the profile already exists, {@code false} otherwise
+	 * @param name the name of the profile
+	 * @param serverIP the IP of the leader broker
+	 * @param serverPort the port of the leader broker
+	 * @param dir the directory where the profiles are stored
+	 *
+	 * @throws IOException if an I/O error occurs while creating the User object
+	 */
 	public CrappyUserUI(boolean existing, String name, String serverIP, int serverPort, Path dir)
 	        throws IOException {
 		super(name);

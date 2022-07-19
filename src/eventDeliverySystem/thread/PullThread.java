@@ -11,7 +11,7 @@ import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.util.LG;
 
 /**
- * A Thread that reads some Posts from a stream and then posts them to a Topic.
+ * A Thread that reads some Posts from a stream and then posts them to a Topic as they arrive.
  *
  * @author Alex Mandelias
  */
@@ -22,8 +22,7 @@ public class PullThread extends Thread {
 	private final Callback callback;
 
 	/**
-	 * Constructs the Thread that, when run, will read some Posts from a stream and
-	 * post them to a Topic.
+	 * Constructs the Thread that reads some Posts from a stream and posts them to a Topic.
 	 *
 	 * @param stream the input stream from which to read the Posts
 	 * @param topic  the Topic in which the new Posts will be added
@@ -32,6 +31,16 @@ public class PullThread extends Thread {
 		this(stream, topic, null);
 	}
 
+	/**
+	 * Constructs the Thread that reads some Posts from a stream and posts them to a Topic and
+	 * additionally calls a callback right before finishing execution.
+	 *
+	 * @param stream   the input stream from which to read the Posts
+	 * @param topic    the Topic in which the new Posts will be added
+	 * @param callback the callback to call right before finishing execution
+	 *
+	 * @see Callback
+	 */
 	public PullThread(ObjectInputStream stream, AbstractTopic topic, Callback callback) {
 		super("PullThread-" + topic.getName());
 		ois = stream;

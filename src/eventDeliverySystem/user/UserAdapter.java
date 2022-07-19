@@ -1,7 +1,16 @@
 package eventDeliverySystem.user;
 
+/**
+ * An abstract adapter class for receiving user events. The methods in this class are empty. This
+ * class exists as convenience for creating listener objects.
+ *
+ * @author Alex Mandelias
+ *
+ * @see UserListener
+ */
 public abstract class UserAdapter implements UserListener {
 
+    /** Constructs a UserAdapter */
     protected UserAdapter() {}
 
     @Override

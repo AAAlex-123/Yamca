@@ -12,8 +12,7 @@ import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.Topic;
 
 /**
- * A data structure holding information about a user and their subscribed
- * topics.
+ * A data structure holding information about a Profile and their subscribed topics.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas

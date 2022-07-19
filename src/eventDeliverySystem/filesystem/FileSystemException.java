@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 /**
- * Defines an IOException subclass that is associated with a specific Path.
+ * Defines an IOException subclass that is associated with an I/O operation on a specific Path.
  *
  * @author Alex Mandelias
  */

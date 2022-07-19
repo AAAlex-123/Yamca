@@ -17,19 +17,16 @@ import eventDeliverySystem.util.LG;
 public class PushThread extends Thread {
 
 	/**
-	 * Defines the different Protocols used to push data.
+	 * Defines the different Protocols used by the PushThread to push data.
 	 *
 	 * @author Alex Mandelias
 	 */
 	public enum Protocol {
 
-		/** Tell Pull Thread to receive a set amount of data and stop */
+		/** Tell the Pull Thread to receive a set amount of data and stop */
 		NORMAL,
 
-		/**
-		 * Tell Pull Thread to always wait to receive data. Subsequent Push Threads to
-		 * the same output stream should use the 'WITHOUT_COUNT' protocol.
-		 */
+		/** Tell the Pull Thread to always wait to receive data */
 		KEEP_ALIVE,
 	}
 
@@ -41,13 +38,13 @@ public class PushThread extends Thread {
 	private final Callback            callback;
 
 	/**
-	 * Constructs the Thread that, when run, will write some Posts to a stream.
+	 * Constructs the Thread that writes some Posts to a stream.
 	 *
 	 * @param stream    the output stream to which to write the Posts
 	 * @param postInfos the PostInfo objects to write to the stream
 	 * @param packets   the array of Packets to write for each PostInfo object
-	 * @param protocol  the protocol to use when pushing, which alters the behaviour
-	 *                  of the Pull Thread
+	 * @param protocol  the protocol to use when pushing, which alters the behaviour of the Pull
+	 *                  Thread
 	 *
 	 * @see Protocol
 	 */
@@ -65,7 +62,7 @@ public class PushThread extends Thread {
 	 * @param packets   the array of Packets to write for each PostInfo object
 	 * @param protocol  the protocol to use when pushing, which alters the behaviour
 	 *                  of the Pull Thread
-	 * @param callback  the callback to call when this thread finishes execution
+	 * @param callback  the callback to call right before finishing execution
 	 *
 	 * @throws NullPointerException if a callback is provided but topicName is {@code null}
 	 *

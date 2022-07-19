@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * An extension of the Abstract Topic that stores data as required by Brokers.
- * The Posts are stored disassembled as PostInfo and Packet objects.
+ * An extension of the Abstract Topic that stores data as required by Brokers. The Posts are stored
+ * disassembled as PostInfo and Packet objects.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
@@ -35,6 +35,12 @@ class BrokerTopic extends AbstractTopic {
 	private final Map<Long, List<Packet>> packetsPerPostInfoMap = new HashMap<>();
 	private final Map<Long, Integer>      indexPerPostInfoId = new HashMap<>();
 
+	/**
+	 * Constructs a BrokerTopic that contains the posts of another Topic.
+	 *
+	 * @param abstractTopic the Topic whose Posts will be posted to this BrokerTopic
+	 * @param postDAO the ITopicDAO object responsible for this BrokerTopic
+	 */
 	public BrokerTopic(AbstractTopic abstractTopic, ITopicDAO postDAO) {
 		this(abstractTopic.getName(), postDAO);
 		abstractTopic.forEach(post -> {
@@ -48,6 +54,7 @@ class BrokerTopic extends AbstractTopic {
 	 * Constructs an empty BrokerTopic.
 	 *
 	 * @param name the name of the new BrokerTopic
+	 * @param postDAO the ITopicDAO object responsible for this BrokerTopic
 	 */
 	public BrokerTopic(String name, ITopicDAO postDAO) {
 		super(name);
@@ -76,14 +83,12 @@ class BrokerTopic extends AbstractTopic {
 	}
 
 	/**
-	 * Fills the List and the Map with all of the PostInfo and Packet objects in
-	 * this Topic.
+	 * Adds to the given List and the Map all the PostInfo and Packet objects in this Topic.
 	 *
-	 * @param emptyPostInfoList          the empty list where the PostInfo objects
-	 *                                   will be added, sorted from earliest to
-	 *                                   latest
-	 * @param emptyPacketsPerPostInfoMap the empty map where the Packets of every
-	 *                                   PostInfo object will be added
+	 * @param emptyPostInfoList          the empty list where the PostInfo objects will be added,
+	 *                                   sorted from earliest to latest
+	 * @param emptyPacketsPerPostInfoMap the empty map where the Packets of every PostInfo object
+	 *                                   will be added
 	 */
 	public void getAllPosts(List<PostInfo> emptyPostInfoList,
 	        Map<Long, Packet[]> emptyPacketsPerPostInfoMap) {
@@ -91,16 +96,15 @@ class BrokerTopic extends AbstractTopic {
 	}
 
 	/**
-	 * Fills the List and the Map with all of the PostInfo and Packet objects in
-	 * this Topic starting from a certain PostInfo object. The PostInfo with the
-	 * given ID and its Packets are not returned.
+	 * Adds to the given List and the Map all the PostInfo and Packet objects in this Topic starting
+	 * from a certain PostInfo object. The PostInfo with the given ID and its Packets are not
+	 * returned.
 	 *
 	 * @param postId                     the ID of the PostInfo
-	 * @param emptyPostInfoList          the empty list where the PostInfo objects
-	 *                                   will be added, sorted from earliest to
-	 *                                   latest
-	 * @param emptyPacketsPerPostInfoMap the empty map where the Packets of every
-	 *                                   PostInfo object will be added
+	 * @param emptyPostInfoList          the empty list where the PostInfo objects will be added,
+	 *                                   sorted from earliest to latest
+	 * @param emptyPacketsPerPostInfoMap the empty map where the Packets of every PostInfo object
+	 *                                   will be added
 	 */
 	public synchronized void getPostsSince(long postId, List<PostInfo> emptyPostInfoList,
 	        Map<Long, Packet[]> emptyPacketsPerPostInfoMap) {
@@ -120,6 +124,13 @@ class BrokerTopic extends AbstractTopic {
 		}
 	}
 
+	/**
+	 * Saves a Post of this Topic to the ITopicDAO object of this BrokerTopic.
+	 *
+	 * @param postId the id of the Post to save
+	 *
+	 * @throws IOException if an I/O Error occurs while saving the Post.
+	 */
 	public void savePostToTFS(long postId) throws IOException {
 		PostInfo pi = postInfoList.get(indexPerPostInfoId.get(postId));
 		final List<Packet> ls = packetsPerPostInfoMap.get(postId);

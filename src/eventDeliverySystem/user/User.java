@@ -18,8 +18,12 @@ import eventDeliverySystem.user.UserEvent.Tag;
 import eventDeliverySystem.util.LG;
 
 /**
- * A class that manages the actions of the user by communicating with the server
- * and retrieving / committing posts to the file system.
+ * Facade for the different components that make up a User. Only objects of this class are needed to
+ * interact with the client side of the event delivery system. The other public classes of this
+ * package allow for more intricate interactions between the system and the surrounding application.
+ * <p>
+ * A single object of this class needs to be created on start up, which can be then be reused with
+ * the help of the {@code switchToExistingProfile} and {@code switchToNewProfile} methods.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
@@ -36,23 +40,21 @@ public class User {
 	private final Consumer  consumer;
 
 	/**
-	 * Retrieve the user's data and the saved posts, establish connection to the
-	 * server and prepare to receive and send posts.
+	 * Retrieves the user's data and saved posts, establishes the connection to the server,
+	 * prepares to receive and send posts and returns the new User object.
 	 *
 	 * @param serverIP              the IP of the server
 	 * @param serverPort            the port of the server
-	 * @param profilesRootDirectory the root directory of all the Profiles in the
-	 *                              file system
+	 * @param profilesRootDirectory the root directory of all the Profiles in the file system
 	 * @param profileName           the name of the existing profile
 	 *
 	 * @return the new User
 	 *
-	 * @throws ServerException      if the connection to the server fails
-	 * @throws FileSystemException  if an I/O error occurs while interacting with
-	 *                              the file system
-	 * @throws UnknownHostException if no IP address for the host could be found, or
-	 *                              if a scope_id was specified for a global
-	 *                              IPv6address while resolving the defaultServerIP.
+	 * @throws ServerException      if the connection to the server could not be established
+	 * @throws FileSystemException  if an I/O error occurs while interacting with the file system
+	 * @throws UnknownHostException if no IP address for the host could be found, or if a scope_id
+	 * 								was specified for a global IPv6 address while resolving the
+	 * 								defaultServerIP.
 	 */
 	public static User loadExisting(String serverIP, int serverPort, Path profilesRootDirectory,
 	        String profileName) throws ServerException, FileSystemException, UnknownHostException {
@@ -62,7 +64,7 @@ public class User {
 	}
 
 	/**
-	 * Creates a new User in the file system and returns a new User object.
+	 * Creates a new User in the file system and returns the new User object.
 	 *
 	 * @param serverIP              the IP of the server
 	 * @param serverPort            the port of the server
@@ -72,12 +74,11 @@ public class User {
 	 *
 	 * @return the new User
 	 *
-	 * @throws ServerException      if the connection to the server fails
-	 * @throws FileSystemException  if an I/O error occurs while interacting with
-	 *                              the file system
-	 * @throws UnknownHostException if no IP address for the host could be found, or
-	 *                              if a scope_id was specified for a global
-	 *                              IPv6address while resolving the defaultServerIP.
+	 * @throws ServerException      if the connection to the server could not be established
+	 * @throws FileSystemException  if an I/O error occurs while interacting with the file system
+	 * @throws UnknownHostException if no IP address for the host could be found, or if a scope_id
+	 * 								was specified for a global IPv6 address while resolving the
+	 * 								defaultServerIP.
 	 */
 	public static User createNew(String serverIP, int serverPort, Path profilesRootDirectory,
 	        String name) throws ServerException, FileSystemException, UnknownHostException {
@@ -110,9 +111,8 @@ public class User {
 	 *
 	 * @param profileName the name of the new Profile
 	 *
-	 * @throws ServerException     if the connection to the server fails
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
+	 * @throws ServerException     if the connection to the server could not be established
+	 * @throws FileSystemException if an I/O error occurs while interacting with the file system
 	 */
 	public void switchToNewProfile(String profileName) throws ServerException, FileSystemException {
 		currentProfile = profileFileSystem.createNewProfile(profileName);
@@ -120,13 +120,12 @@ public class User {
 	}
 
 	/**
-	 * Switches this User to manage an existing.
+	 * Switches this User to manage an existing Profile.
 	 *
-	 * @param profileName the name of an existing Profile
+	 * @param profileName the name of the existing Profile
 	 *
-	 * @throws ServerException     if the connection to the server fails
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
+	 * @throws ServerException     if the connection to the server could not be established
+	 * @throws FileSystemException if an I/O error occurs while interacting with the file system
 	 */
 	public void switchToExistingProfile(String profileName)
 	        throws ServerException, FileSystemException {
@@ -135,12 +134,12 @@ public class User {
 	}
 
 	/**
-	 * Posts a Post to a Topic.
+	 * Sends a post to a specific topic on the server. This operation fires a user event with the
+	 * {@code MESSAGE_SENT} tag when it's completed. Every user that is subscribed to this Topic
+	 * receives a user event with the {@code MESSAGE_RECEIVED} tag.
 	 *
-	 * @param post      the Post to post
+	 * @param post the Post to post
 	 * @param topicName the name of the Topic to which to post
-	 *
-	 * @see Publisher#push(Post, String)
 	 */
 	public void post(Post post, String topicName) {
 		LG.sout("User#post(%s, %s)", post, topicName);
@@ -158,8 +157,8 @@ public class User {
 	}
 
 	/**
-	 * Attempts to push a new Topic. If this succeeds,
-	 * {@link #listenForNewTopic(String)} is called.
+	 * Creates a topic on the server. This operation fires a user event with the
+	 * {@code TOPIC_CREATED} tag when it's completed.
 	 *
 	 * @param topicName the name of the Topic to create
 	 */
@@ -172,6 +171,13 @@ public class User {
 		LG.out();
 	}
 
+	/**
+	 * Deletes a topic on the server. This operation fires a user event with the
+	 * {@code SERVER_TOPIC_DELETED} tag when it's completed. Every user that is subscribed to this
+	 * Topic receives a user event with the {@code TOPIC_DELETED} tag.
+	 *
+	 * @param topicName the name of the Topic to delete
+	 */
 	public void deleteTopic(String topicName) {
 		LG.sout("User#deleteTopic(%s)", topicName);
 		LG.in();
@@ -213,9 +219,8 @@ public class User {
 	}
 
 	/**
-	 * Registers a new Topic for which new Posts will be pulled and adds it to the
-	 * Profile and file system. The pulled topics will be added to the Profile and
-	 * saved to the file system.
+	 * Registers this user to listen for posts on a Topic. THis operation fires a user event with
+	 * the {@code TOPIC_LISTENED} tag.
 	 *
 	 * @param topicName the name of the Topic to listen for
 	 */
@@ -228,6 +233,12 @@ public class User {
 		LG.out();
 	}
 
+	/**
+	 * Stops this user from listening for a Topic. This operation fires a user event with the
+	 * {@code TOPIC_LISTEN_STOPPED} tag.
+	 *
+	 * @param topicName the name of the Topic to stop listening for
+	 */
 	public void stopListeningForTopic(String topicName) {
 		LG.sout("User#stopListeningForTopic(%s)", topicName);
 		LG.in();
@@ -243,6 +254,11 @@ public class User {
 		LG.out();
 	}
 
+	/**
+	 * Registers a listener to receive user events from this User.
+	 *
+	 * @param l the listener
+	 */
 	public void addUserListener(UserListener l) {
 		listener.addListener(l);
 	}
@@ -283,7 +299,20 @@ public class User {
 		}
 	}
 
+	/**
+	 * Exposes the event processing capabilities of the User. Objects of this class are injected
+	 * wherever needed to allow for events to be fired to the User without exposing its whole
+	 * interface.
+	 *
+	 * @author Alex Mandelias
+	 */
 	public class UserStub {
+
+		/**
+		 * Fires a user event by forwarding it to its associated User.
+		 *
+		 * @param e the event to fire
+		 */
 		public void fireEvent(UserEvent e) {
 			User.this.processEvent(e);
 		}

@@ -40,13 +40,12 @@ public class Server {
 	private Server() {}
 
 	/**
-	 * Starts a new broker as a process on the local machine. If args are provided
-	 * the broker will attempt to connect to the leader broker. If not, the broker
-	 * is considered the leader broker. When starting the server subsystem the first
-	 * broker MUST be the leader.
+	 * Starts a new broker as a process on the local machine. If more than one arg is provided the
+	 * broker will attempt to connect to the leader broker. If exactly one arg is provided, the
+	 * broker is considered the leader broker. When starting the server subsystem the first broker
+	 * MUST be the leader.
 	 *
-	 * @param args empty if the broker is the leader, the IP address and port of the
-	 *             leader otherwise.
+	 * @param args see {@code Server#Usage} for more information or run with no args
 	 */
 	public static void main(String[] args) {
 		LG.args(args);

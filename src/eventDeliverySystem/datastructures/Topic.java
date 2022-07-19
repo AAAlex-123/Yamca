@@ -38,6 +38,11 @@ public class Topic extends AbstractTopic {
 	private final List<Post>         postList;
 	private final Map<Long, Integer> indexPerPostId;
 
+	/**
+	 * Constructs a Topic that contains the posts of another Topic.
+	 *
+	 * @param topic the Topic whose Posts will be posted to this Topic
+	 */
 	public Topic(AbstractTopic topic) {
 		this(topic.getName());
 		for (Post post : topic) {

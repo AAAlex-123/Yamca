@@ -29,9 +29,8 @@ import eventDeliverySystem.util.PortManager;
 import eventDeliverySystem.util.Subscriber;
 
 /**
- * A remote component that forms the backbone of the EventDeliverySystem.
- * Brokers act as part of a distributed server that services Publishers and
- * Consumers.
+ * A remote component that forms the backbone of the EventDeliverySystem. Brokers act as part of a
+ * distributed server that services Publishers and Consumers.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
@@ -51,12 +50,14 @@ public class Broker implements Runnable, AutoCloseable {
 	private final ServerSocket brokerRequestSocket;
 
 	/**
-	 * Create a new leader broker. This is necessarily the first step to initialize
-	 * the server network.
+	 * Create a new leader broker. This is necessarily the first step to initialize the server
+	 * network.
 	 *
-	 * @param postDao the {@link ITopicDAO} object responsible for this Broker's Posts.
+	 * @param postDao the ITopicDAO object responsible for this Broker's Posts.
 	 *
-	 * @throws FileSystemException if the path given does not correspond to an existing directory
+	 * @throws IOException if the server could not be started
+	 *
+	 * @see ITopicDAO
 	 */
 	public Broker(ITopicDAO postDao) throws IOException {
 		btm = new BrokerTopicManager(postDao);
@@ -80,12 +81,14 @@ public class Broker implements Runnable, AutoCloseable {
 	/**
 	 * Create a non-leader broker and connect it to the server network.
 	 *
-	 * @param postDao the {@link ITopicDAO} object responsible for this Broker's Posts.
+	 * @param postDao    the ITopicDAO object responsible for this Broker's Posts.
 	 * @param leaderIP   the IP of the leader broker
 	 * @param leaderPort the port of the leader broker
 	 *
-	 * @throws UncheckedIOException if the connection to the leader broker fails
-	 * @throws FileSystemException if the path given does not correspond to an existing directory
+	 * @throws IOException if this server could not be started or the connection to the leader
+	 * 					   broker could not be established.
+	 *
+	 * @see ITopicDAO
 	 */
 	@SuppressWarnings("resource")
 	public Broker(ITopicDAO postDao, String leaderIP, int leaderPort) throws IOException {
@@ -103,10 +106,7 @@ public class Broker implements Runnable, AutoCloseable {
 		}
 	}
 
-	/**
-	 * Begins listening for and new requests by clients and connection requests from
-	 * other brokers.
-	 */
+	/** Starts listening for new requests by clients and connection requests from other brokers */
 	@Override
 	public void run() {
 
@@ -162,13 +162,6 @@ public class Broker implements Runnable, AutoCloseable {
 
 	// ========== THREADS ==========
 
-	/**
-	 * A thread which continuously reads new client requests and assigns worker
-	 * threads to fulfil them when necessary.
-	 *
-	 * @author Alex Mandelias
-	 * @author Dimitris Tsirmpas
-	 */
 	private class ClientRequestHandler extends Thread {
 
 		private final Socket socket;

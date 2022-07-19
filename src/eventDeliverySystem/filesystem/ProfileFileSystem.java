@@ -13,7 +13,7 @@ import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.Topic;
 
 /**
- * Manages Profiles that are saved in directories in the file system.
+ * Manages Profiles that are saved in directories in the machine's file system.
  *
  * @author Alex Mandelias
  */
@@ -27,11 +27,10 @@ public class ProfileFileSystem {
 	/**
 	 * Creates a new Profile File System for the specified root directory.
 	 *
-	 * @param profilesRootDirectory the root directory of the new file system whose
-	 *                              sub-directories correspond to different Profiles
+	 * @param profilesRootDirectory the root directory of the new file system whose subdirectories
+	 *                              correspond to different Profiles
 	 *
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
+	 * @throws FileSystemException if an I/O error occurs while interacting with the file system
 	 */
 	public ProfileFileSystem(Path profilesRootDirectory) throws FileSystemException {
 		if (!Files.exists(profilesRootDirectory)) {

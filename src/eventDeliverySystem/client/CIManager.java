@@ -15,8 +15,8 @@ import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.server.ServerException;
 
 /**
- * Wrapper for a cache that communicates with the default Broker to obtain and
- * store the ConnectionInfos for many Topics.
+ * Wrapper for a cache that communicates with the default Broker to obtain and store the
+ * ConnectionInfo objects for many Topics.
  *
  * @author Alex Mandelias
  */
@@ -40,9 +40,8 @@ class CIManager {
 	}
 
 	/**
-	 * Communicates with the default Broker to fetch the ConnectionInfo associated
-	 * with a Topic, which is then cached. Future requests for it will use the
-	 * ConnectionInfo found in the cache.
+	 * Communicates with the default Broker to fetch the ConnectionInfo associated with a Topic,
+	 * which is then cached. Future requests for it will use the ConnectionInfo found in the cache.
 	 *
 	 * @param topicName the Topic for which to get the ConnectionInfo
 	 *

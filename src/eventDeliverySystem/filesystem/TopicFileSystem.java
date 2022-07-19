@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 
 
 /**
- * Manages AbstractTopics that are saved in directories in the file system.
+ * Manages AbstractTopics that are saved in directories in the machine's file system.
  *
  * @author Alex Mandelias
  */
@@ -40,8 +40,8 @@ public class TopicFileSystem implements ITopicDAO {
 	/**
 	 * Constructs a new Topic File System for a given root directory.
 	 *
-	 * @param topicsRootDirectory the root directory of the new file system whose
-	 *                            sub-directories correspond to different Topics
+	 * @param topicsRootDirectory the root directory of the new file system whose subdirectories
+	 *                            correspond to different Topics
 	 *
 	 * @throws FileSystemException if the path given does not correspond to an existing directory
 	 */

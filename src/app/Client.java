@@ -36,10 +36,9 @@ public class Client {
 	private Client() {}
 
 	/**
-	 * Runs a Client which can be configured by args. Run with no arguments for a
-	 * help message.
+	 * Runs a Client which can be configured by args. Run with no arguments for a help message.
 	 *
-	 * @param args run with no args to get information about args
+	 * @param args see {@code Server#Usage} for more information or run with no args
 	 */
 	public static void main(String[] args) {
 		LG.args(args);

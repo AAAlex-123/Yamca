@@ -1,9 +1,9 @@
 package eventDeliverySystem.thread;
 
 /**
- * Provides a way for a Push- or PullThread to pass a message when it has finished executing. Right
- * before a Push- or PullThread returns, it calls the {@link Callback#onCompletion(boolean, String,
- * Throwable)} method of the Callback provided, if it exists.
+ * Provides a way for a Push- or PullThread to perform an action when it has finished executing.
+ * Right before a Push- or PullThread returns, it calls the {@code onCompletion} method of the
+ * Callback provided, if it exists.
  *
  * @author Alex Mandelias
  */

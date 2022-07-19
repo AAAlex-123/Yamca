@@ -22,6 +22,16 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	/** Constant to be used when no post exists and an ID is needed */
 	public static final long FETCH_ALL_POSTS = -1L;
 
+	/**
+	 * Creates a simple Topic that contains the given Posts and can be posted to. This method is
+	 * intended to be used for reading a Topic from a ITopicDAO object and then using a copy
+	 * constructor of a concrete Topic to obtain the desired Topic subclass.
+	 *
+	 * @param name the name of the simple Topic
+	 * @param posts the Posts to add to the Topic
+	 *
+	 * @return the Topic
+	 */
 	public static AbstractTopic createSimple(String name, List<Post> posts) {
 		AbstractTopic simple = new SimpleTopic(name);
 		posts.forEach(post -> {
