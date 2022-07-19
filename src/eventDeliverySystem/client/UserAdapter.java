@@ -1,4 +1,4 @@
-package eventDeliverySystem.user;
+package eventDeliverySystem.client;
 
 /**
  * An abstract adapter class for receiving user events. The methods in this class are empty. This

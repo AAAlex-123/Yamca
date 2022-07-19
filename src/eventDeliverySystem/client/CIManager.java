@@ -20,7 +20,7 @@ import eventDeliverySystem.server.ServerException;
  *
  * @author Alex Mandelias
  */
-class CIManager {
+final class CIManager {
 
 	private final Map<String, ConnectionInfo> cache;
 
@@ -33,7 +33,7 @@ class CIManager {
 	 * @param defaultBrokerIP   the InetAddress of the default Broker to connect to
 	 * @param defaultBrokerPort the Port of the default Broker to connect to
 	 */
-	public CIManager(InetAddress defaultBrokerIP, int defaultBrokerPort) {
+	CIManager(InetAddress defaultBrokerIP, int defaultBrokerPort) {
 		cache = new HashMap<>();
 		this.defaultBrokerIP = defaultBrokerIP;
 		this.defaultBrokerPort = defaultBrokerPort;
@@ -49,7 +49,7 @@ class CIManager {
 	 *
 	 * @throws ServerException if a connection to the server fails
 	 */
-	public ConnectionInfo getConnectionInfoForTopic(String topicName) throws ServerException {
+	ConnectionInfo getConnectionInfoForTopic(String topicName) throws ServerException {
 		ConnectionInfo address = cache.get(topicName);
 		if (address != null)
 			return address;

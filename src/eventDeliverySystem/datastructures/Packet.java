@@ -9,7 +9,7 @@ import java.io.Serializable;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-public class Packet implements Serializable {
+public final class Packet implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 

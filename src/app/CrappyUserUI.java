@@ -13,9 +13,9 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 
-import eventDeliverySystem.user.User;
-import eventDeliverySystem.user.UserAdapter;
-import eventDeliverySystem.user.UserEvent;
+import eventDeliverySystem.client.User;
+import eventDeliverySystem.client.UserAdapter;
+import eventDeliverySystem.client.UserEvent;
 import eventDeliverySystem.datastructures.Post;
 
 /**

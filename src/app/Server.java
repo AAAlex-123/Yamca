@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.util.Properties;
 import java.util.concurrent.ThreadLocalRandom;
 
-import eventDeliverySystem.datastructures.ITopicDAO;
+import eventDeliverySystem.filesystem.ITopicDAO;
 import eventDeliverySystem.filesystem.FileSystemException;
 import eventDeliverySystem.filesystem.TopicFileSystem;
 import eventDeliverySystem.server.Broker;

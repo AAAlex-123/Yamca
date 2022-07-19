@@ -14,7 +14,7 @@ import eventDeliverySystem.util.LG;
  *
  * @author Alex Mandelias
  */
-public class PushThread extends Thread {
+public final class PushThread extends Thread {
 
 	/**
 	 * Defines the different Protocols used by the PushThread to push data.

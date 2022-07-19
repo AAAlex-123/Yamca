@@ -10,7 +10,7 @@ import java.io.Serializable;
  *
  * @see Post
  */
-public class PostInfo implements Serializable {
+public final class PostInfo implements Serializable {
 
 	private static final long serialVersionUID = 1;
 

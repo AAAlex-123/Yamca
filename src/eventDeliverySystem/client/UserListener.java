@@ -1,4 +1,4 @@
-package eventDeliverySystem.user;
+package eventDeliverySystem.client;
 
 /**
  * The listener interface for receiving events on a User.

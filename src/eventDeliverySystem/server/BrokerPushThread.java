@@ -13,7 +13,7 @@ import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.util.LG;
-import eventDeliverySystem.util.Subscriber;
+import eventDeliverySystem.datastructures.Subscriber;
 
 /**
  * A thread that upon receiving new packets for a Topic, streams them to a Consumer.
@@ -21,7 +21,7 @@ import eventDeliverySystem.util.Subscriber;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-class BrokerPushThread extends Thread implements Subscriber {
+final class BrokerPushThread extends Thread implements Subscriber {
 
 	private static final long NO_CURRENT_POST_ID = -1;
 
@@ -41,7 +41,7 @@ class BrokerPushThread extends Thread implements Subscriber {
 	 * @param topic  the Topic to subscribe to
 	 * @param stream the output stream to which to write the data
 	 */
-	public BrokerPushThread(AbstractTopic topic, ObjectOutputStream stream) {
+	BrokerPushThread(AbstractTopic topic, ObjectOutputStream stream) {
 		super("BrokerPushThread-" + topic.getName());
 		topic.subscribe(this);
 

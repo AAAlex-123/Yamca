@@ -4,9 +4,8 @@ import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.datastructures.Message.MessageType;
 import eventDeliverySystem.server.ServerException;
-import eventDeliverySystem.user.User.UserStub;
-import eventDeliverySystem.user.UserEvent;
-import eventDeliverySystem.user.UserEvent.Tag;
+import eventDeliverySystem.client.User.UserStub;
+import eventDeliverySystem.client.UserEvent.Tag;
 import eventDeliverySystem.util.LG;
 
 import java.io.IOException;

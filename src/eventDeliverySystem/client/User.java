@@ -1,4 +1,4 @@
-package eventDeliverySystem.user;
+package eventDeliverySystem.client;
 
 import java.net.UnknownHostException;
 import java.nio.file.Path;
@@ -7,14 +7,12 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import eventDeliverySystem.client.Consumer;
-import eventDeliverySystem.client.Publisher;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.filesystem.FileSystemException;
 import eventDeliverySystem.filesystem.Profile;
 import eventDeliverySystem.filesystem.ProfileFileSystem;
 import eventDeliverySystem.server.ServerException;
-import eventDeliverySystem.user.UserEvent.Tag;
+import eventDeliverySystem.client.UserEvent.Tag;
 import eventDeliverySystem.util.LG;
 
 /**
@@ -28,7 +26,7 @@ import eventDeliverySystem.util.LG;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-public class User {
+public final class User {
 
 	private final CompositeListener listener = new CompositeListener();
 	private final UserStub userStub = new UserStub();
@@ -306,14 +304,14 @@ public class User {
 	 *
 	 * @author Alex Mandelias
 	 */
-	public class UserStub {
+	final class UserStub {
 
 		/**
 		 * Fires a user event by forwarding it to its associated User.
 		 *
 		 * @param e the event to fire
 		 */
-		public void fireEvent(UserEvent e) {
+		void fireEvent(UserEvent e) {
 			User.this.processEvent(e);
 		}
 	}
@@ -322,7 +320,7 @@ public class User {
 
 		private final Set<UserListener> listeners = new HashSet<>();
 
-		public void addListener(UserListener l) {
+		void addListener(UserListener l) {
 			listeners.add(l);
 		}
 
@@ -387,7 +385,7 @@ public class User {
 		}
 	}
 
-	private class BasicListener implements UserListener {
+	private final class BasicListener implements UserListener {
 
 		@Override
 		public void onMessageSent(UserEvent e) {

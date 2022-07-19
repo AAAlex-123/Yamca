@@ -17,7 +17,7 @@ import java.util.stream.Stream;
  *
  * @see PostInfo
  */
-public class Post {
+public final class Post {
 
 	/**
 	 * Extracts the data of some Packets into a single Post.

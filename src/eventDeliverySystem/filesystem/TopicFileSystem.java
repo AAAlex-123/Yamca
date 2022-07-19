@@ -1,7 +1,6 @@
 package eventDeliverySystem.filesystem;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
-import eventDeliverySystem.datastructures.ITopicDAO;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
 
@@ -26,7 +25,7 @@ import java.util.stream.Stream;
  *
  * @author Alex Mandelias
  */
-public class TopicFileSystem implements ITopicDAO {
+public final class TopicFileSystem implements ITopicDAO {
 
 	private static final Pattern PATTERN = Pattern
 	        .compile("(?<postId>-?\\d+)-(?<posterName>\\w+)\\.(?<extension>.*)");

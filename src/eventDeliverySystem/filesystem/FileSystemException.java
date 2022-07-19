@@ -16,7 +16,7 @@ public class FileSystemException extends IOException {
 	 * @param path  the path related to the Exception
 	 * @param cause the underlying IOException
 	 */
-	public FileSystemException(Path path, IOException cause) {
+	FileSystemException(Path path, IOException cause) {
 		super("Error while interacting with path: " + path, cause);
 	}
 }

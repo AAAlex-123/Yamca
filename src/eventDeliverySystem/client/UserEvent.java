@@ -1,4 +1,4 @@
-package eventDeliverySystem.user;
+package eventDeliverySystem.client;
 
 /**
  * An event that indicates that a user-related event has occurred.
@@ -10,7 +10,7 @@ package eventDeliverySystem.user;
  *
  * @author Alex Mandelias
  */
-public class UserEvent {
+public final class UserEvent {
 
     /**
      * Creates a successful user event with the given Tag that is associated with a Topic.
@@ -20,7 +20,7 @@ public class UserEvent {
      *
      * @return the successful event
      */
-    public static UserEvent successful(Tag tag, String topicName) {
+    static UserEvent successful(Tag tag, String topicName) {
         return new UserEvent(true, tag, topicName,null);
     }
 
@@ -34,7 +34,7 @@ public class UserEvent {
      *
      * @return the successful event
      */
-    public static UserEvent failed(Tag tag, String topicName, Throwable cause) {
+    static UserEvent failed(Tag tag, String topicName, Throwable cause) {
         return new UserEvent(false, tag, topicName, cause);
     }
 

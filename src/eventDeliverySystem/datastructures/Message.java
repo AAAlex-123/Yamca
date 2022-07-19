@@ -9,7 +9,7 @@ import java.io.Serializable;
  *
  * @author Dimitris Tsirmpas
  */
-public class Message implements Serializable {
+public final class Message implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private final MessageType type;

@@ -1,8 +1,4 @@
-package eventDeliverySystem.util;
-
-import eventDeliverySystem.datastructures.Packet;
-import eventDeliverySystem.datastructures.Post;
-import eventDeliverySystem.datastructures.PostInfo;
+package eventDeliverySystem.datastructures;
 
 /**
  * An interface denoting any class that needs to be notified about the arrival

@@ -1,7 +1,10 @@
-package eventDeliverySystem.datastructures;
+package eventDeliverySystem.filesystem;
 
 import java.io.IOException;
 import java.util.Collection;
+
+import eventDeliverySystem.datastructures.AbstractTopic;
+import eventDeliverySystem.datastructures.Post;
 
 /**
  * Interface for a Data Access Object responsible for Topic entities.

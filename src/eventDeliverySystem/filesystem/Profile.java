@@ -17,7 +17,7 @@ import eventDeliverySystem.datastructures.Topic;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-public class Profile {
+public final class Profile {
 
 	private final String               name;
 	private final Map<String, Topic>   topics;
@@ -75,7 +75,7 @@ public class Profile {
 	 * @throws NullPointerException     if {@code topic == null}
 	 * @throws IllegalArgumentException if a Topic with the same name already exists
 	 */
-	public void addTopic(Topic topic) {
+	void addTopic(Topic topic) {
 		if (topic == null)
 			throw new NullPointerException("Topic can't be null");
 

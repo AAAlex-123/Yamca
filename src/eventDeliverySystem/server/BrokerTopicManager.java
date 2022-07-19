@@ -1,11 +1,10 @@
 package eventDeliverySystem.server;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
-import eventDeliverySystem.datastructures.ITopicDAO;
+import eventDeliverySystem.filesystem.ITopicDAO;
 import eventDeliverySystem.util.LG;
 
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,11 +18,11 @@ import java.util.Set;
  *
  * @author Alex Mandelias
  */
-public class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> {
+final class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> {
 
     private final ITopicDAO postDao;
     private final Map<String, Set<Socket>> consumerSocketsPerTopic = new HashMap<>();
-    private final Map<String, BrokerTopic>             topicsByName = new HashMap<>();
+    private final Map<String, BrokerTopic> topicsByName = new HashMap<>();
 
     /**
      * Constructs a manager for BrokerTopic objects.
@@ -33,13 +32,15 @@ public class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> 
      * @throws IOException if an I/O Error occurs while reading existing Topics from the ITopicDAO
      *                     object
      */
-    public BrokerTopicManager(ITopicDAO postDao) throws IOException {
+    BrokerTopicManager(ITopicDAO postDao) throws IOException {
         LG.sout("BrokerTopicManager(%s)", postDao);
         LG.in();
         this.postDao = postDao;
-        for (AbstractTopic abstractTopic : this.postDao.readAllTopics()) {
-            LG.sout("abstractTopic=%s", abstractTopic);
-            addExistingTopic(new BrokerTopic(abstractTopic, this.postDao));
+        synchronized (this.postDao) {
+            for (AbstractTopic abstractTopic : this.postDao.readAllTopics()) {
+                LG.sout("abstractTopic=%s", abstractTopic);
+                addExistingTopic(new BrokerTopic(abstractTopic, this.postDao));
+            }
         }
         LG.out();
     }
@@ -65,7 +66,7 @@ public class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> 
      *
      * @return {@code true} if it exists, {@code false} otherwise
      */
-    public boolean topicExists(String topicName) {
+    boolean topicExists(String topicName) {
         synchronized (topicsByName) {
             return topicsByName.containsKey(topicName);
         }
@@ -80,7 +81,7 @@ public class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> 
      *
      * @throws NoSuchElementException if no BrokerTopic with that name exists in this manager
      */
-    public BrokerTopic getTopic(String topicName) throws NoSuchElementException {
+    BrokerTopic getTopic(String topicName) throws NoSuchElementException {
         assertTopicExists(topicName);
 
         synchronized (topicsByName) {
@@ -97,7 +98,7 @@ public class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> 
      * @throws IOException if an I/O Error occurred while saving the BrokerTopic to the ITopicDAO
      * @throws IllegalArgumentException if a BrokerTopic with the given name already exists
      */
-    public void addTopic(String topicName) throws IOException, IllegalArgumentException {
+    void addTopic(String topicName) throws IOException, IllegalArgumentException {
         assertTopicDoesNotExist(topicName);
 
         BrokerTopic topic = new BrokerTopic(topicName, postDao);
@@ -119,7 +120,7 @@ public class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> 
      *                     with it or while deleting it from the ITopicDAO object
      * @throws NoSuchElementException if no BrokerTopic with that name exists in this manager
      */
-    public void removeTopic(String topicName) throws IOException, NoSuchElementException {
+    void removeTopic(String topicName) throws IOException, NoSuchElementException {
 
         assertTopicExists(topicName);
 
@@ -136,7 +137,9 @@ public class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> 
             consumerSocketsPerTopic.remove(topicName);
         }
 
-        postDao.deleteTopic(topicName);
+        synchronized (postDao) {
+            postDao.deleteTopic(topicName);
+        }
     }
 
     /**
@@ -147,7 +150,7 @@ public class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> 
      *
      * @throws NoSuchElementException if no BrokerTopic with that name exists in this manager
      */
-    public void registerConsumer(String topicName, Socket socket) throws NoSuchElementException {
+    void registerConsumer(String topicName, Socket socket) throws NoSuchElementException {
         assertTopicExists(topicName);
 
         synchronized (consumerSocketsPerTopic) {

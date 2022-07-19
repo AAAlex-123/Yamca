@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import eventDeliverySystem.util.Subscriber;
-
 /**
  * Abstract superclass of all Topics.
  *
@@ -51,6 +49,8 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	 * @param name the name of the new Topic
 	 */
 	protected AbstractTopic(String name) {
+		// TODO: throw NPE if name == null
+		// TODO: add @throws in javadoc
 		this.name = name;
 		subscribers = new HashSet<>();
 	}
@@ -179,11 +179,11 @@ public abstract class AbstractTopic implements Iterable<Post> {
 		return Objects.equals(name, other.name); // same name == same Topic, can't have duplicate names
 	}
 
-	private static class SimpleTopic extends AbstractTopic {
+	private static final class SimpleTopic extends AbstractTopic {
 
 		private final List<Post> posts = new LinkedList<>();
 
-		public SimpleTopic(String name) {
+		private SimpleTopic(String name) {
 			super(name);
 		}
 

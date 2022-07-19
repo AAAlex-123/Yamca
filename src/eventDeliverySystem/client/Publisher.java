@@ -11,7 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import eventDeliverySystem.user.User.UserStub;
+import eventDeliverySystem.client.User.UserStub;
 import eventDeliverySystem.datastructures.Message.MessageType;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;
@@ -19,8 +19,7 @@ import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.server.Broker;
 import eventDeliverySystem.server.ServerException;
 import eventDeliverySystem.thread.PushThread.Protocol;
-import eventDeliverySystem.user.UserEvent;
-import eventDeliverySystem.user.UserEvent.Tag;
+import eventDeliverySystem.client.UserEvent.Tag;
 import eventDeliverySystem.util.LG;
 
 /**
@@ -32,7 +31,7 @@ import eventDeliverySystem.util.LG;
  *
  * @see Broker
  */
-public class Publisher extends ClientNode {
+final class Publisher extends ClientNode {
 
 	/**
 	 * Constructs a Publisher.
@@ -47,7 +46,7 @@ public class Publisher extends ClientNode {
 	 *                              if a scope_id was specified for a global IPv6
 	 *                              address while resolving the defaultServerIP.
 	 */
-	public Publisher(String defaultServerIP, int defaultServerPort, UserStub userStub)
+	Publisher(String defaultServerIP, int defaultServerPort, UserStub userStub)
 	        throws UnknownHostException {
 		this(InetAddress.getByName(defaultServerIP), defaultServerPort, userStub);
 	}
@@ -63,7 +62,7 @@ public class Publisher extends ClientNode {
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
 	 */
-	public Publisher(byte[] defaultServerIP, int defaultServerPort, UserStub userStub)
+	Publisher(byte[] defaultServerIP, int defaultServerPort, UserStub userStub)
 	        throws UnknownHostException {
 		this(InetAddress.getByAddress(defaultServerIP), defaultServerPort, userStub);
 	}
@@ -86,7 +85,7 @@ public class Publisher extends ClientNode {
 	 * @param post      the Post
 	 * @param topicName the name of the Topic to which to push the Post
 	 */
-	public void push(Post post, String topicName) {
+	void push(Post post, String topicName) {
 		LG.sout("Publisher#push(%s, %s)", post, topicName);
 		Thread thread = new Publisher.PushThread(post, topicName);
 		thread.start();
@@ -98,7 +97,7 @@ public class Publisher extends ClientNode {
 	 *
 	 * @param topicName the name of the new Topic
 	 */
-	public void createTopic(String topicName) {
+	void createTopic(String topicName) {
 		LG.sout("Publisher#createTopic(%s)", topicName);
 		Thread thread = new CreateTopicThread(topicName);
 		thread.start();
@@ -110,13 +109,13 @@ public class Publisher extends ClientNode {
 	 *
 	 * @param topicName the name of the new Topic
 	 */
-	public void deleteTopic(String topicName) {
+	void deleteTopic(String topicName) {
 		LG.sout("Publisher#deleteTopic(%s)", topicName);
 		Thread thread = new DeleteTopicThread(topicName);
 		thread.start();
 	}
 
-	private class PushThread extends ClientThread {
+	private final class PushThread extends ClientThread {
 
 		private final Post post;
 
@@ -127,7 +126,7 @@ public class Publisher extends ClientNode {
 		 * @param post      the Post
 		 * @param topicName the name of the Topic to which to push the Post
 		 */
-		public PushThread(Post post, String topicName) {
+		private PushThread(Post post, String topicName) {
 			super(Tag.MESSAGE_SENT, MessageType.DATA_PACKET_SEND, topicName);
 			this.post = post;
 		}
@@ -164,9 +163,9 @@ public class Publisher extends ClientNode {
 		}
 	}
 
-	private class CreateTopicThread extends ClientThread {
+	private final class CreateTopicThread extends ClientThread {
 
-		public CreateTopicThread(String topicName) {
+		private CreateTopicThread(String topicName) {
 			super(Tag.TOPIC_CREATED, MessageType.CREATE_TOPIC, topicName);
 		}
 
@@ -182,9 +181,9 @@ public class Publisher extends ClientNode {
 		}
 	}
 
-	private class DeleteTopicThread extends ClientThread {
+	private final class DeleteTopicThread extends ClientThread {
 
-		public DeleteTopicThread(String topicName) {
+		private DeleteTopicThread(String topicName) {
 			super(Tag.SERVER_TOPIC_DELETED, MessageType.DELETE_TOPIC, topicName);
 		}
 

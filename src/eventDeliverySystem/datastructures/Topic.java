@@ -16,7 +16,7 @@ import eventDeliverySystem.util.LG;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-public class Topic extends AbstractTopic {
+public final class Topic extends AbstractTopic {
 
 	private static final Post dummyPost;
 
@@ -193,7 +193,7 @@ public class Topic extends AbstractTopic {
 	 * @author Alex Mandelias
 	 * @author Dimitris Tsirmpas
 	 */
-	public static class TopicToken implements Serializable {
+	public static final class TopicToken implements Serializable {
 
 		private static final long serialVersionUID = 1L;
 

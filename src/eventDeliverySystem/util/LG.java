@@ -9,7 +9,7 @@ import java.net.Socket;
  *
  * @author Alex Mandelias
  */
-public class LG {
+public final class LG {
 
 	private static final PrintStream out = System.out;
 	private static final PrintStream err = System.err;

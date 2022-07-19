@@ -14,10 +14,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import eventDeliverySystem.thread.Callback;
-import eventDeliverySystem.user.User.UserStub;
-import eventDeliverySystem.user.UserEvent;
-import eventDeliverySystem.user.UserEvent.Tag;
+import eventDeliverySystem.client.User.UserStub;
+import eventDeliverySystem.client.UserEvent.Tag;
 import eventDeliverySystem.datastructures.Message.MessageType;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;
@@ -27,7 +25,7 @@ import eventDeliverySystem.server.Broker;
 import eventDeliverySystem.server.ServerException;
 import eventDeliverySystem.thread.PullThread;
 import eventDeliverySystem.util.LG;
-import eventDeliverySystem.util.Subscriber;
+import eventDeliverySystem.datastructures.Subscriber;
 
 /**
  * A client-side process which is responsible for listening for a set of Topics
@@ -38,7 +36,7 @@ import eventDeliverySystem.util.Subscriber;
  *
  * @see Broker
  */
-public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
+final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 
 	private final TopicManager topicManager;
 
@@ -54,7 +52,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 *                              if a scope_id was specified for a global IPv6
 	 *                              address while resolving the defaultServerIP.
 	 */
-	public Consumer(String serverIP, int serverPort, UserStub userStub) throws UnknownHostException {
+	Consumer(String serverIP, int serverPort, UserStub userStub) throws UnknownHostException {
 		this(InetAddress.getByName(serverIP), serverPort, userStub);
 	}
 
@@ -68,7 +66,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
 	 */
-	public Consumer(byte[] serverIP, int serverPort, UserStub userStub) throws UnknownHostException {
+	Consumer(byte[] serverIP, int serverPort, UserStub userStub) throws UnknownHostException {
 		this(InetAddress.getByAddress(serverIP), serverPort, userStub);
 	}
 
@@ -98,7 +96,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 * @throws ServerException if an I/O error occurs while closing existing
 	 *                         connections
 	 */
-	public void setTopics(Set<Topic> newTopics) throws ServerException {
+	void setTopics(Set<Topic> newTopics) throws ServerException {
 		topicManager.close();
 
 		for (final Topic topic : newTopics)
@@ -115,7 +113,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 *
 	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
-	public List<Post> pull(String topicName) {
+	List<Post> pull(String topicName) {
 		return topicManager.fetch(topicName);
 	}
 
@@ -125,7 +123,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 *
 	 * @param topicName the name of the Topic to fetch from
 	 */
-	public void listenForNewTopic(String topicName) {
+	void listenForNewTopic(String topicName) {
 		LG.sout("listenForNewTopic(%s)", topicName);
 		listenForTopic(new Topic(topicName), false);
 	}
@@ -136,7 +134,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 *
 	 * @param topicName the name of the Topic this Consumer already listens to
 	 */
-	public void stopListeningForTopic(String topicName) {
+	void stopListeningForTopic(String topicName) {
 		LG.sout("Consumer#stopListeningForTopic(%s)", topicName);
 		Thread thread = new StopListeningForTopicThread(topicName);
 		thread.start();
@@ -172,14 +170,17 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			userStub.fireEvent(UserEvent.successful(Tag.MESSAGE_RECEIVED, topicName));
 	}
 
-	private static class TopicManager implements AutoCloseable {
+	// @SuppressWarnings("AccessingNonPublicFieldOfAnotherObject")
+	private static final class TopicManager implements AutoCloseable {
 
-		private static class TopicData {
-			private final Topic topic;
-			private long pointer;
-			private Socket      socket;
+		private TopicManager() {}
 
-			public TopicData(Topic topic) {
+		private static final class TopicData {
+			final Topic topic;
+			long pointer;
+			Socket      socket;
+
+			private TopicData(Topic topic) {
 				this.topic = topic;
 				pointer = topic.getLastPostId();
 				socket = null;
@@ -198,7 +199,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		 *
 		 * @throws NoSuchElementException if no Topic with the given name exists
 		 */
-		public List<Post> fetch(String topicName) {
+		private List<Post> fetch(String topicName) {
 			LG.sout("Consumer#fetch(%s)", topicName);
 			LG.in();
 			if (!tdMap.containsKey(topicName))
@@ -226,7 +227,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		 * @throws IllegalArgumentException if this Manager already has a socket for a
 		 *                                  Topic with the same name.
 		 */
-		public void addSocket(Topic topic, Socket socket) {
+		void addSocket(Topic topic, Socket socket) {
 			LG.sout("TopicManager#addSocket(%s, %s)", topic, socket);
 			add(topic);
 			tdMap.get(topic.getName()).socket = socket;
@@ -240,7 +241,7 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		 * @throws IOException if an I/O Exception occurs while closing the socket
 		 * @throws NoSuchElementException if this Manager doesn't have a Topic with the given name
 		 */
-		public void removeSocket(String topicName) throws IOException, NoSuchElementException {
+		void removeSocket(String topicName) throws IOException, NoSuchElementException {
 			LG.sout("TopicManager#removeSocket(%s)", topicName);
 			if (!tdMap.containsKey(topicName))
 				throw new NoSuchElementException(ClientNode.getTopicDNEString(topicName));
@@ -280,11 +281,11 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		}
 	}
 
-	private class ListenForNewTopicThread extends ClientThread {
+	private final class ListenForNewTopicThread extends ClientThread {
 
 		private final Topic topic;
 
-		public ListenForNewTopicThread(Topic topic) {
+		private ListenForNewTopicThread(Topic topic) {
 			super(Tag.TOPIC_LISTENED, MessageType.INITIALISE_CONSUMER, topic.getName());
 			this.topic = topic;
 		}
@@ -317,13 +318,13 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		}
 	}
 
-	private class ListenForExistingTopicThread extends ClientThread {
+	private final class ListenForExistingTopicThread extends ClientThread {
 
 		// NOTE: only tag changes between the ListenFor???TopicThreads to differentiate between events
 
 		private final Topic topic;
 
-		public ListenForExistingTopicThread(Topic topic) {
+		private ListenForExistingTopicThread(Topic topic) {
 			super(Tag.TOPIC_LOADED, MessageType.INITIALISE_CONSUMER, topic.getName());
 			this.topic = topic;
 		}
@@ -355,12 +356,13 @@ public class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		}
 	}
 
-	private class StopListeningForTopicThread extends Thread {
+	private final class StopListeningForTopicThread extends Thread {
 
 		private final Tag eventTag = Tag.TOPIC_LISTEN_STOPPED;
 		private final String topicName;
 
-		public StopListeningForTopicThread(String topicName) {
+		private StopListeningForTopicThread(String topicName) {
+			super();
 			this.topicName = topicName;
 		}
 

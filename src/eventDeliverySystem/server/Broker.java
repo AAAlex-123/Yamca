@@ -15,18 +15,16 @@ import java.util.NoSuchElementException;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.ConnectionInfo;
-import eventDeliverySystem.datastructures.ITopicDAO;
+import eventDeliverySystem.filesystem.ITopicDAO;
 import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.datastructures.Topic.TopicToken;
-import eventDeliverySystem.filesystem.FileSystemException;
 import eventDeliverySystem.thread.PullThread;
 import eventDeliverySystem.thread.PushThread;
 import eventDeliverySystem.thread.PushThread.Protocol;
 import eventDeliverySystem.util.LG;
-import eventDeliverySystem.util.PortManager;
-import eventDeliverySystem.util.Subscriber;
+import eventDeliverySystem.datastructures.Subscriber;
 
 /**
  * A remote component that forms the backbone of the EventDeliverySystem. Brokers act as part of a
@@ -35,7 +33,7 @@ import eventDeliverySystem.util.Subscriber;
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-public class Broker implements Runnable, AutoCloseable {
+public final class Broker implements Runnable, AutoCloseable {
 
 	private static final int MAX_CONNECTIONS = 64;
 
@@ -162,11 +160,11 @@ public class Broker implements Runnable, AutoCloseable {
 
 	// ========== THREADS ==========
 
-	private class ClientRequestHandler extends Thread {
+	private final class ClientRequestHandler extends Thread {
 
 		private final Socket socket;
 
-		public ClientRequestHandler(Socket socket) {
+		private ClientRequestHandler(Socket socket) {
 			super("ClientRequestHandler-" + socket.getInetAddress() + "-" + socket.getLocalPort());
 			this.socket = socket;
 		}
@@ -387,11 +385,11 @@ public class Broker implements Runnable, AutoCloseable {
 		}
 	}
 
-	private class BrokerRequestHandler extends Thread {
+	private final class BrokerRequestHandler extends Thread {
 
 		private final Socket socket;
 
-		public BrokerRequestHandler(Socket socket) {
+		private BrokerRequestHandler(Socket socket) {
 			super("BrokerRequestHandler-" + socket.getInetAddress() + "-" + socket.getLocalPort());
 			this.socket = socket;
 		}
@@ -425,11 +423,11 @@ public class Broker implements Runnable, AutoCloseable {
 		}
 	}
 
-	private class BrokerTopicSubscriber implements Subscriber {
+	private final class BrokerTopicSubscriber implements Subscriber {
 
 		private final BrokerTopic brokerTopic;
 
-		public BrokerTopicSubscriber(BrokerTopic brokerTopic) {
+		private BrokerTopicSubscriber(BrokerTopic brokerTopic) {
 			this.brokerTopic = brokerTopic;
 		}
 

@@ -1,4 +1,4 @@
-package eventDeliverySystem.util;
+package eventDeliverySystem.server;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -11,7 +11,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * @author Dimitris Tsirmpas
  */
-public class PortManager {
+final class PortManager {
 
 	private static final int LOWEST_PORT  = 29170;
 	private static final int HIGHEST_PORT = 29998;
@@ -24,7 +24,7 @@ public class PortManager {
 	 *
 	 * @return a new available port
 	 */
-	public static synchronized int getNewAvailablePort() {
+	static synchronized int getNewAvailablePort() {
 		final ThreadLocalRandom tlr = ThreadLocalRandom.current();
 		int port;
 		do

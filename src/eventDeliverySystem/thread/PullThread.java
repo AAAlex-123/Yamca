@@ -15,7 +15,7 @@ import eventDeliverySystem.util.LG;
  *
  * @author Alex Mandelias
  */
-public class PullThread extends Thread {
+public final class PullThread extends Thread {
 
 	private final ObjectInputStream ois;
 	private final AbstractTopic     topic;

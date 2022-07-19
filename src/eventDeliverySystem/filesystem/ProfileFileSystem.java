@@ -17,7 +17,7 @@ import eventDeliverySystem.datastructures.Topic;
  *
  * @author Alex Mandelias
  */
-public class ProfileFileSystem {
+public final class ProfileFileSystem {
 
 	private final Path                         profilesRootDirectory;
 	private final Map<String, TopicFileSystem> topicFileSystemMap = new HashMap<>();
@@ -60,7 +60,7 @@ public class ProfileFileSystem {
 	 * @throws FileSystemException if an I/O error occurs while interacting with the
 	 *                             file system
 	 */
-	public Stream<String> getProfileNames() throws FileSystemException {
+	private Stream<String> getProfileNames() throws FileSystemException {
 		try {
 			return Files.list(profilesRootDirectory).filter(Files::isDirectory)
 		        .map(path -> path.getFileName().toString());
