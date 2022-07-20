@@ -1,4 +1,4 @@
-package eventDeliverySystem.filesystem;
+package eventDeliverySystem.client;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -75,7 +75,7 @@ public final class Profile {
 	 * @throws NullPointerException     if {@code topic == null}
 	 * @throws IllegalArgumentException if a Topic with the same name already exists
 	 */
-	void addTopic(Topic topic) {
+	public void addTopic(Topic topic) {
 		if (topic == null)
 			throw new NullPointerException("Topic can't be null");
 

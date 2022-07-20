@@ -1,5 +1,6 @@
 package eventDeliverySystem.client;
 
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -7,9 +8,9 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import eventDeliverySystem.dao.IProfileDAO;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.filesystem.FileSystemException;
-import eventDeliverySystem.filesystem.Profile;
 import eventDeliverySystem.filesystem.ProfileFileSystem;
 import eventDeliverySystem.server.ServerException;
 import eventDeliverySystem.client.UserEvent.Tag;
@@ -31,7 +32,7 @@ public final class User {
 	private final CompositeListener listener = new CompositeListener();
 	private final UserStub userStub = new UserStub();
 
-	private final ProfileFileSystem profileFileSystem;
+	private final IProfileDAO profileDao;
 	private Profile                 currentProfile;
 
 	private final Publisher publisher;
@@ -41,22 +42,22 @@ public final class User {
 	 * Retrieves the user's data and saved posts, establishes the connection to the server,
 	 * prepares to receive and send posts and returns the new User object.
 	 *
-	 * @param serverIP              the IP of the server
-	 * @param serverPort            the port of the server
-	 * @param profilesRootDirectory the root directory of all the Profiles in the file system
-	 * @param profileName           the name of the existing profile
+	 * @param serverIP    the IP of the server
+	 * @param serverPort  the port of the server
+	 * @param profileDao  the Profile Data Access Object for this User
+	 * @param profileName the name of the existing profile
 	 *
 	 * @return the new User
 	 *
+	 * @throws IOException if an I/O error occurs while interacting with the IProfileDAO object
 	 * @throws ServerException      if the connection to the server could not be established
-	 * @throws FileSystemException  if an I/O error occurs while interacting with the file system
 	 * @throws UnknownHostException if no IP address for the host could be found, or if a scope_id
 	 * 								was specified for a global IPv6 address while resolving the
 	 * 								defaultServerIP.
 	 */
-	public static User loadExisting(String serverIP, int serverPort, Path profilesRootDirectory,
-	        String profileName) throws ServerException, FileSystemException, UnknownHostException {
-		final User user = new User(serverIP, serverPort, profilesRootDirectory);
+	public static User loadExisting(String serverIP, int serverPort, IProfileDAO profileDao,
+	        String profileName) throws IOException {
+		final User user = new User(serverIP, serverPort, profileDao);
 		user.switchToExistingProfile(profileName);
 		return user;
 	}
@@ -64,30 +65,28 @@ public final class User {
 	/**
 	 * Creates a new User in the file system and returns the new User object.
 	 *
-	 * @param serverIP              the IP of the server
-	 * @param serverPort            the port of the server
-	 * @param profilesRootDirectory the root directory of all the Profiles in the
-	 *                              file system
-	 * @param name                  the name of the new Profile
+	 * @param serverIP   the IP of the server
+	 * @param serverPort the port of the server
+	 * @param profileDao the Profile Data Access Object for this User
+	 * @param name       the name of the new Profile
 	 *
 	 * @return the new User
 	 *
+	 * @throws IOException if an I/O error occurs while interacting with the IProfileDAO object
 	 * @throws ServerException      if the connection to the server could not be established
-	 * @throws FileSystemException  if an I/O error occurs while interacting with the file system
 	 * @throws UnknownHostException if no IP address for the host could be found, or if a scope_id
 	 * 								was specified for a global IPv6 address while resolving the
 	 * 								defaultServerIP.
 	 */
-	public static User createNew(String serverIP, int serverPort, Path profilesRootDirectory,
-	        String name) throws ServerException, FileSystemException, UnknownHostException {
-		final User user = new User(serverIP, serverPort, profilesRootDirectory);
+	public static User createNew(String serverIP, int serverPort, IProfileDAO profileDao,
+	        String name) throws IOException {
+		final User user = new User(serverIP, serverPort, profileDao);
 		user.switchToNewProfile(name);
 		return user;
 	}
 
-	private User(String serverIP, int port, Path profilesRootDirectory)
-	        throws FileSystemException, UnknownHostException {
-		profileFileSystem = new ProfileFileSystem(profilesRootDirectory);
+	private User(String serverIP, int port, IProfileDAO profileDao) throws UnknownHostException {
+		this.profileDao = profileDao;
 
 		publisher = new Publisher(serverIP, port, userStub);
 		consumer = new Consumer(serverIP, port, userStub);
@@ -110,10 +109,10 @@ public final class User {
 	 * @param profileName the name of the new Profile
 	 *
 	 * @throws ServerException     if the connection to the server could not be established
-	 * @throws FileSystemException if an I/O error occurs while interacting with the file system
+	 * @throws IOException if an I/O error occurs while interacting with the IProfileDAO object
 	 */
-	public void switchToNewProfile(String profileName) throws ServerException, FileSystemException {
-		currentProfile = profileFileSystem.createNewProfile(profileName);
+	public void switchToNewProfile(String profileName) throws IOException {
+		currentProfile = profileDao.createNewProfile(profileName);
 		consumer.setTopics(new HashSet<>(currentProfile.getTopics()));
 	}
 
@@ -123,11 +122,10 @@ public final class User {
 	 * @param profileName the name of the existing Profile
 	 *
 	 * @throws ServerException     if the connection to the server could not be established
-	 * @throws FileSystemException if an I/O error occurs while interacting with the file system
+	 * @throws IOException if an I/O error occurs while interacting with the IProfileDAO object
 	 */
-	public void switchToExistingProfile(String profileName)
-	        throws ServerException, FileSystemException {
-		currentProfile = profileFileSystem.loadProfile(profileName);
+	public void switchToExistingProfile(String profileName) throws IOException {
+		currentProfile = profileDao.loadProfile(profileName);
 		consumer.setTopics(new HashSet<>(currentProfile.getTopics()));
 	}
 
@@ -197,11 +195,10 @@ public final class User {
 	 *
 	 * @param topicName the name of the Topic from which to pull
 	 *
-	 * @throws FileSystemException    if an I/O error occurs while interacting with
-	 *                                the file system
+	 * @throws IOException if an I/O error occurs while interacting with the IProfileDAO object
 	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
-	public void pull(String topicName) throws FileSystemException, NoSuchElementException {
+	public void pull(String topicName) throws IOException, NoSuchElementException {
 		LG.sout("User#pull from Topic '%s'", topicName);
 		LG.in();
 		final List<Post> newPosts = consumer.pull(topicName); // sorted from earliest to latest
@@ -210,7 +207,7 @@ public final class User {
 
 		for (final Post post : newPosts) {
 			LG.sout("Saving Post '%s'", post);
-			profileFileSystem.savePost(post, topicName);
+			profileDao.savePost(post, topicName);
 		}
 
 		LG.out();
@@ -440,8 +437,8 @@ public final class User {
 			if (e.success) {
 				currentProfile.addTopic(e.topicName);
 				try {
-					profileFileSystem.createTopic(e.topicName);
-				} catch (FileSystemException e1) {
+					profileDao.createTopic(e.topicName);
+				} catch (IOException e1) {
 					User.this.userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
 				}
 			} else {
@@ -470,8 +467,8 @@ public final class User {
 		private void removeTopicLocally(UserEvent e) {
 			currentProfile.removeTopic(e.topicName);
 			try {
-				profileFileSystem.deleteTopic(e.topicName);
-			} catch (FileSystemException e1) {
+				profileDao.deleteTopic(e.topicName);
+			} catch (IOException e1) {
 				User.this.userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
 			}
 		}

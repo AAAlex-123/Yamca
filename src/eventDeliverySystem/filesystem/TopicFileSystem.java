@@ -1,5 +1,6 @@
 package eventDeliverySystem.filesystem;
 
+import eventDeliverySystem.dao.ITopicDAO;
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;

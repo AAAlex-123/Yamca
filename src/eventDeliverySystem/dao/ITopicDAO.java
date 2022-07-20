@@ -1,4 +1,4 @@
-package eventDeliverySystem.filesystem;
+package eventDeliverySystem.dao;
 
 import java.io.IOException;
 import java.util.Collection;

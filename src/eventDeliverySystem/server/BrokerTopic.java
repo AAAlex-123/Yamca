@@ -5,7 +5,7 @@ import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
-import eventDeliverySystem.filesystem.ITopicDAO;
+import eventDeliverySystem.dao.ITopicDAO;
 
 import java.io.IOException;
 import java.util.HashMap;

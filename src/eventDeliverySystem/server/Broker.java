@@ -15,7 +15,7 @@ import java.util.NoSuchElementException;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.ConnectionInfo;
-import eventDeliverySystem.filesystem.ITopicDAO;
+import eventDeliverySystem.dao.ITopicDAO;
 import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.PostInfo;

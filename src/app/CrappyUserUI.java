@@ -16,6 +16,7 @@ import javax.swing.WindowConstants;
 import eventDeliverySystem.client.User;
 import eventDeliverySystem.client.UserAdapter;
 import eventDeliverySystem.client.UserEvent;
+import eventDeliverySystem.dao.IProfileDAO;
 import eventDeliverySystem.datastructures.Post;
 
 /**
@@ -34,17 +35,17 @@ public class CrappyUserUI extends JFrame {
 	 * @param name the name of the profile
 	 * @param serverIP the IP of the leader broker
 	 * @param serverPort the port of the leader broker
-	 * @param dir the directory where the profiles are stored
+	 * @param profileDao the Profile Data Access Object for this User
 	 *
 	 * @throws IOException if an I/O error occurs while creating the User object
 	 */
-	public CrappyUserUI(boolean existing, String name, String serverIP, int serverPort, Path dir)
-	        throws IOException {
+	public CrappyUserUI(boolean existing, String name, String serverIP, int serverPort,
+						IProfileDAO profileDao) throws IOException {
 		super(name);
 		if (existing)
-			user = User.loadExisting(serverIP, serverPort, dir, name);
+			user = User.loadExisting(serverIP, serverPort, profileDao, name);
 		else
-			user = User.createNew(serverIP, serverPort, dir, name);
+			user = User.createNew(serverIP, serverPort, profileDao, name);
 
 		user.addUserListener(new UserAdapter() {
 			@Override

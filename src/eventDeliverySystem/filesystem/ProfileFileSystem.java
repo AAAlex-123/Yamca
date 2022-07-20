@@ -8,16 +8,18 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
+import eventDeliverySystem.client.Profile;
+import eventDeliverySystem.datastructures.Topic;
+import eventDeliverySystem.dao.IProfileDAO;
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Post;
-import eventDeliverySystem.datastructures.Topic;
 
 /**
  * Manages Profiles that are saved in directories in the machine's file system.
  *
  * @author Alex Mandelias
  */
-public final class ProfileFileSystem {
+public final class ProfileFileSystem implements IProfileDAO {
 
 	private final Path                         profilesRootDirectory;
 	private final Map<String, TopicFileSystem> topicFileSystemMap = new HashMap<>();
@@ -68,17 +70,7 @@ public final class ProfileFileSystem {
 			throw new FileSystemException(profilesRootDirectory, e);
 		}
 	}
-
-	/**
-	 * Creates a new, empty, Profile in this File System.
-	 *
-	 * @param profileName the name of the new Profile
-	 *
-	 * @return the new Profile
-	 *
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
-	 */
+	@Override
 	public Profile createNewProfile(String profileName) throws FileSystemException {
 		Path topicsDirectory = getTopicsDirectory(profileName);
 		try {
@@ -94,17 +86,7 @@ public final class ProfileFileSystem {
 		return new Profile(profileName);
 	}
 
-	/**
-	 * Reads a Profile from this File System and returns it as a Profile object.
-	 * After this method returns, this file system will operate on the new Profile.
-	 *
-	 * @param profileName the id of the Profile to read
-	 *
-	 * @return the Profile read
-	 *
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
-	 */
+	@Override
 	public Profile loadProfile(String profileName) throws FileSystemException {
 		changeProfile(profileName);
 
@@ -117,39 +99,17 @@ public final class ProfileFileSystem {
 		return profile;
 	}
 
-	/**
-	 * Creates a new Topic for the current Profile.
-	 *
-	 * @param topicName the name of the new Topic
-	 *
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
-	 */
+	@Override
 	public void createTopic(String topicName) throws FileSystemException {
 		getTopicFileSystemForCurrentUser().createTopic(topicName);
 	}
 
-	/**
-	 * Deletes an existing Topic from the current Profile.
-	 *
-	 * @param topicName the name of the new Topic
-	 *
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
-	 */
+	@Override
 	public void deleteTopic(String topicName) throws FileSystemException {
 		getTopicFileSystemForCurrentUser().deleteTopic(topicName);
 	}
 
-	/**
-	 * Saves a Post in the file system for the current Profile.
-	 *
-	 * @param post      the Post to save
-	 * @param topicName the name of the Topic in which to save
-	 *
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
-	 */
+	@Override
 	public void savePost(Post post, String topicName) throws FileSystemException {
 		getTopicFileSystemForCurrentUser().writePost(post, topicName);
 	}

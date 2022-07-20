@@ -7,6 +7,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Properties;
 
+import eventDeliverySystem.dao.IProfileDAO;
+import eventDeliverySystem.dao.ITopicDAO;
+import eventDeliverySystem.filesystem.FileSystemException;
+import eventDeliverySystem.filesystem.ProfileFileSystem;
+import eventDeliverySystem.filesystem.TopicFileSystem;
 import eventDeliverySystem.util.LG;
 
 /**
@@ -101,9 +106,17 @@ public class Client {
 
 		final Path dir = new File(args[ARG_USER_DIR]).toPath();
 
+		IProfileDAO profileDao;
+		try {
+			profileDao = new ProfileFileSystem(dir);
+		} catch (FileSystemException e) {
+			LG.err("Path %s does not exist", dir);
+			return;
+		}
+
 		CrappyUserUI ui;
 		try {
-			ui = new CrappyUserUI(existing, name, ip, port, dir);
+			ui = new CrappyUserUI(existing, name, ip, port, profileDao);
 		} catch (final IOException e) {
 			LG.err("There was an I/O error either while interacting with the file system or"
 				   + "connecting to the server");

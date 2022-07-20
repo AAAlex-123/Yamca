@@ -1,7 +1,7 @@
 package eventDeliverySystem.server;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
-import eventDeliverySystem.filesystem.ITopicDAO;
+import eventDeliverySystem.dao.ITopicDAO;
 import eventDeliverySystem.util.LG;
 
 import java.io.IOException;
