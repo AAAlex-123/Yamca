@@ -35,8 +35,6 @@ import eventDeliverySystem.datastructures.Subscriber;
  */
 public final class Broker implements Runnable, AutoCloseable {
 
-	private static final int MAX_CONNECTIONS = 64;
-
 	private final BrokerTopicManager btm;
 
 	// no need to synchronise because these practically immutable after startup
@@ -62,10 +60,8 @@ public final class Broker implements Runnable, AutoCloseable {
 		btm.forEach(brokerTopic -> brokerTopic.subscribe(new BrokerTopicSubscriber(brokerTopic)));
 
 		try {
-			clientRequestSocket = new ServerSocket(29621, // PortManager.getNewAvailablePort(),
-			        Broker.MAX_CONNECTIONS);
-			brokerRequestSocket = new ServerSocket(29622, // PortManager.getNewAvailablePort(),
-			        Broker.MAX_CONNECTIONS);
+			clientRequestSocket = new ServerSocket(0, 50, null);
+			brokerRequestSocket = new ServerSocket(0, 50, null);
 		} catch (final IOException e) {
 			throw new UncheckedIOException("Could not open server socket: ", e);
 		}
