@@ -1,6 +1,5 @@
-package eventDeliverySystem.datastructures;
+package eventDeliverySystem.client;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -8,15 +7,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import eventDeliverySystem.datastructures.AbstractTopic;
+import eventDeliverySystem.datastructures.Packet;
+import eventDeliverySystem.datastructures.Post;
+import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.util.LG;
 
 /**
- * Encapsulates the contents of a conversation / Topic.
+ * An extension of the Abstract Topic that stores data as required by Users. The Posts are stored
+ * as-is, as Post objects.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-public final class Topic extends AbstractTopic {
+final class UserTopic extends AbstractTopic {
 
 	private static final Post dummyPost;
 
@@ -25,27 +29,18 @@ public final class Topic extends AbstractTopic {
 		dummyPost = new Post(null, dummyPI);
 	}
 
-	/**
-	 * Returns a token that can be used to smartly update the topic by the Broker.
-	 *
-	 * @return the update token
-	 */
-	public TopicToken getToken() {
-		return new TopicToken(this);
-	}
-
 	// first element is the first post added
-	private final List<Post>         postList;
-	private final Map<Long, Integer> indexPerPostId;
+	private final List<Post>         postList = new LinkedList<>();
+	private final Map<Long, Integer> indexPerPostId = new HashMap<>();
 
 	/**
 	 * Constructs a Topic that contains the posts of another Topic.
 	 *
-	 * @param topic the Topic whose Posts will be posted to this Topic
+	 * @param abstractTopic the Topic whose Posts will be posted to this Topic
 	 */
-	public Topic(AbstractTopic topic) {
-		this(topic.getName());
-		for (Post post : topic) {
+	UserTopic(AbstractTopic abstractTopic) {
+		this(abstractTopic.getName());
+		for (Post post : abstractTopic) {
 			post(post);
 		}
 	}
@@ -55,31 +50,12 @@ public final class Topic extends AbstractTopic {
 	 *
 	 * @param name the Topic's unique name
 	 */
-	public Topic(String name) {
-		this(name, new LinkedList<>());
-	}
-
-	/**
-	 * Creates a new Topic with some Posts.
-	 *
-	 * @param name  the Topic's unique name
-	 * @param posts the Posts to add to the Topic
-	 */
-	public Topic(String name, List<Post> posts) {
+	UserTopic(String name) {
 		super(name);
-		postList = new LinkedList<>();
-		indexPerPostId = new HashMap<>();
 		post(dummyPost);
-
-		post(posts);
 	}
 
-	/**
-	 * Returns the ID of the most recent post in this Topic.
-	 *
-	 * @return the most recent Post's ID or {@link AbstractTopic#FETCH_ALL_POSTS} if
-	 *         there are no Posts in this Topic
-	 */
+	@Override
 	public long getLastPostId() {
 		return postList.get(postList.size() - 1).getPostInfo().getId();
 	}
@@ -114,7 +90,7 @@ public final class Topic extends AbstractTopic {
 	 *
 	 * @param posts the Posts
 	 */
-	public void post(List<Post> posts) {
+	void postAll(List<Post> posts) {
 		for (final Post post : posts)
 			post(post);
 	}
@@ -125,7 +101,7 @@ public final class Topic extends AbstractTopic {
 	}
 
 	/** Clears this Topic by removing all Posts */
-	public void clear() {
+	void clear() {
 		postList.clear();
 		indexPerPostId.clear();
 		post(dummyPost);
@@ -142,7 +118,7 @@ public final class Topic extends AbstractTopic {
 	 *
 	 * @throws NoSuchElementException if no Post in this Topic has the given ID
 	 */
-	public List<Post> getPostsSince(long lastPostId) throws NoSuchElementException {
+	List<Post> getPostsSince(long lastPostId) throws NoSuchElementException {
 		LG.sout("Topic#getPostsSince(%d)", lastPostId);
 		LG.in();
 
@@ -163,7 +139,7 @@ public final class Topic extends AbstractTopic {
 	 *
 	 * @return the Posts in this Topic, sorted from earliest to latest
 	 */
-	public List<Post> getAllPosts() {
+	List<Post> getAllPosts() {
 		return getPostsSince(AbstractTopic.FETCH_ALL_POSTS);
 	}
 
@@ -178,49 +154,11 @@ public final class Topic extends AbstractTopic {
 			return true;
 		if (!super.equals(obj))
 			return false;
-		return (obj instanceof Topic);
+		return (obj instanceof UserTopic);
 	}
 
 	@Override
 	public Iterator<Post> iterator() {
 		return postList.subList(1, postList.size()).iterator();
-	}
-
-	/**
-	 * Encapsulates a Token that uniquely identifies a Post in a Topic and is used
-	 * to transfer only the necessary information between the server and the client.
-	 *
-	 * @author Alex Mandelias
-	 * @author Dimitris Tsirmpas
-	 */
-	public static final class TopicToken implements Serializable {
-
-		private static final long serialVersionUID = 1L;
-
-		private final String topicName;
-		private final long   lastId;
-
-		private TopicToken(Topic topic) {
-			topicName = topic.getName();
-			lastId = topic.getLastPostId();
-		}
-
-		/**
-		 * Returns this TopicToken's topicName.
-		 *
-		 * @return the topicName
-		 */
-		public String getName() {
-			return topicName;
-		}
-
-		/**
-		 * Returns this TopicToken's lastId.
-		 *
-		 * @return the lastId
-		 */
-		public long getLastId() {
-			return lastId;
-		}
 	}
 }

@@ -20,7 +20,6 @@ import eventDeliverySystem.datastructures.Message.MessageType;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
-import eventDeliverySystem.datastructures.Topic;
 import eventDeliverySystem.server.Broker;
 import eventDeliverySystem.server.ServerException;
 import eventDeliverySystem.thread.PullThread;
@@ -91,16 +90,16 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 * Changes the Topics that this Consumer listens to. All connections regarding
 	 * the previous Topics are closed and new ones are established.
 	 *
-	 * @param newTopics the new Topics to listen for
+	 * @param newUserTopics the new Topics to listen for
 	 *
 	 * @throws ServerException if an I/O error occurs while closing existing
 	 *                         connections
 	 */
-	void setTopics(Set<Topic> newTopics) throws ServerException {
+	void setTopics(Set<UserTopic> newUserTopics) throws ServerException {
 		topicManager.close();
 
-		for (final Topic topic : newTopics)
-			listenForTopic(topic, true);
+		for (final UserTopic userTopic : newUserTopics)
+			listenForTopic(userTopic, true);
 	}
 
 	/**
@@ -125,7 +124,7 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 */
 	void listenForNewTopic(String topicName) {
 		LG.sout("listenForNewTopic(%s)", topicName);
-		listenForTopic(new Topic(topicName), false);
+		listenForTopic(new UserTopic(topicName), false);
 	}
 
 	/**
@@ -144,16 +143,16 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 * Registers an existing Topic for this Consumer to continuously fetch new Posts
 	 * from by creating a new Thread that initialises that connection.
 	 *
-	 * @param topic    the Topic to fetch from
+	 * @param userTopic    the Topic to fetch from
 	 * @param existing {@code true} is the Topic already exists, {@code false} if it has just been
 	 *                 created prior to this method call
 	 */
-	private void listenForTopic(Topic topic, boolean existing) {
-		LG.sout("Consumer#listenForTopic(%s)", topic);
-		topic.subscribe(this);
+	private void listenForTopic(UserTopic userTopic, boolean existing) {
+		LG.sout("Consumer#listenForTopic(%s)", userTopic);
+		userTopic.subscribe(this);
 		Thread thread = existing
-						? new ListenForExistingTopicThread(topic)
-						: new ListenForNewTopicThread(topic);
+						? new ListenForExistingTopicThread(userTopic)
+						: new ListenForNewTopicThread(userTopic);
 		thread.start();
 	}
 
@@ -176,13 +175,13 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		private TopicManager() {}
 
 		private static final class TopicData {
-			final Topic topic;
+			final UserTopic userTopic;
 			long pointer;
 			Socket      socket;
 
-			private TopicData(Topic topic) {
-				this.topic = topic;
-				pointer = topic.getLastPostId();
+			private TopicData(UserTopic userTopic) {
+				this.userTopic = userTopic;
+				pointer = userTopic.getLastPostId();
 				socket = null;
 			}
 		}
@@ -208,11 +207,11 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			final TopicData td = tdMap.get(topicName);
 
 			LG.sout("td.pointer=%d", td.pointer);
-			final List<Post> newPosts = td.topic.getPostsSince(td.pointer);
+			final List<Post> newPosts = td.userTopic.getPostsSince(td.pointer);
 			LG.sout("newPosts.size()=%d", newPosts.size());
 
-			td.topic.clear();
-			td.pointer = td.topic.getLastPostId();
+			td.userTopic.clear();
+			td.pointer = td.userTopic.getLastPostId();
 
 			LG.out();
 			return newPosts;
@@ -221,16 +220,16 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		/**
 		 * Adds a Topic to this Manager and registers its socket from where to fetch.
 		 *
-		 * @param topic  the Topic
+		 * @param userTopic  the Topic
 		 * @param socket the socket from where it will fetch
 		 *
 		 * @throws IllegalArgumentException if this Manager already has a socket for a
 		 *                                  Topic with the same name.
 		 */
-		void addSocket(Topic topic, Socket socket) {
-			LG.sout("TopicManager#addSocket(%s, %s)", topic, socket);
-			add(topic);
-			tdMap.get(topic.getName()).socket = socket;
+		void addSocket(UserTopic userTopic, Socket socket) {
+			LG.sout("TopicManager#addSocket(%s, %s)", userTopic, socket);
+			add(userTopic);
+			tdMap.get(userTopic.getName()).socket = socket;
 		}
 
 		/**
@@ -254,17 +253,17 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		/**
 		 * Partially adds a Topic to this Manager by creating its associated TopicData object.
 		 *
-		 * @param topic the Topic
+		 * @param userTopic the Topic
 		 *
 		 * @throws IllegalArgumentException if this Manager already has a socket for a
 		 *                                  Topic with the same name.
 		 */
-		private void add(Topic topic) {
-			final String topicName = topic.getName();
+		private void add(UserTopic userTopic) {
+			final String topicName = userTopic.getName();
 			if (tdMap.containsKey(topicName))
 				throw new IllegalArgumentException(ClientNode.getTopicAEString(topicName));
 
-			tdMap.put(topicName, new TopicManager.TopicData(topic));
+			tdMap.put(topicName, new TopicManager.TopicData(userTopic));
 		}
 
 		@Override
@@ -283,11 +282,11 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 
 	private final class ListenForNewTopicThread extends ClientThread {
 
-		private final Topic topic;
+		private final UserTopic userTopic;
 
-		private ListenForNewTopicThread(Topic topic) {
-			super(Tag.TOPIC_LISTENED, MessageType.INITIALISE_CONSUMER, topic.getName());
-			this.topic = topic;
+		private ListenForNewTopicThread(UserTopic userTopic) {
+			super(Tag.TOPIC_LISTENED, MessageType.INITIALISE_CONSUMER, userTopic.getName());
+			this.userTopic = userTopic;
 		}
 
 		@Override
@@ -299,9 +298,10 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 				throw new ServerException(ClientNode.getTopicDNEString(topicName));
 			}
 
-			final Thread pullThread = new PullThread(ois, topic, (cbSuccess, cbTopicName, cbCause) -> {
+			final Thread pullThread = new PullThread(ois,
+					userTopic, (cbSuccess, cbTopicName, cbCause) -> {
 				if (cbSuccess) {
-					topicManager.addSocket(topic, socket);
+					topicManager.addSocket(userTopic, socket);
 					if (cbCause instanceof EOFException) {
 						userStub.fireEvent(UserEvent.successful(Tag.TOPIC_DELETED, cbTopicName));
 					} else if (cbCause instanceof SocketException) {
@@ -314,7 +314,7 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 
 		@Override
 		protected Object getMessageValue() {
-			return topic.getToken();
+			return userTopic.getToken();
 		}
 	}
 
@@ -322,11 +322,11 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 
 		// NOTE: only tag changes between the ListenFor???TopicThreads to differentiate between events
 
-		private final Topic topic;
+		private final UserTopic userTopic;
 
-		private ListenForExistingTopicThread(Topic topic) {
-			super(Tag.TOPIC_LOADED, MessageType.INITIALISE_CONSUMER, topic.getName());
-			this.topic = topic;
+		private ListenForExistingTopicThread(UserTopic userTopic) {
+			super(Tag.TOPIC_LOADED, MessageType.INITIALISE_CONSUMER, userTopic.getName());
+			this.userTopic = userTopic;
 		}
 
 		@Override
@@ -337,9 +337,10 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 				throw new ServerException(ClientNode.getTopicDNEString(topicName));
 			}
 
-			final Thread pullThread = new PullThread(ois, topic, (cbSuccess, cbTopicName, cbCause) -> {
+			final Thread pullThread = new PullThread(ois,
+					userTopic, (cbSuccess, cbTopicName, cbCause) -> {
 				if (cbSuccess) {
-					topicManager.addSocket(topic, socket);
+					topicManager.addSocket(userTopic, socket);
 					if (cbCause instanceof EOFException) {
 						userStub.fireEvent(UserEvent.successful(Tag.TOPIC_DELETED, cbTopicName));
 					} else if (cbCause instanceof SocketException) {
@@ -352,7 +353,7 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 
 		@Override
 		protected Object getMessageValue() {
-			return topic.getToken();
+			return userTopic.getToken();
 		}
 	}
 

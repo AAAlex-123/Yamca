@@ -1,5 +1,6 @@
 package eventDeliverySystem.datastructures;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -56,6 +57,17 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	}
 
 	/**
+	 * Returns a Topic Token for this Abstract Topic.
+	 *
+	 * @return the Topic Token
+	 *
+	 * @see TopicToken
+	 */
+	public final TopicToken getToken() {
+		return new TopicToken(this);
+	}
+
+	/**
 	 * Returns this Topic's name.
 	 *
 	 * @return the name
@@ -63,6 +75,14 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	public final String getName() {
 		return name;
 	}
+
+	/**
+	 * Returns the ID of the most recent post in this Topic.
+	 *
+	 * @return the most recent Post's ID or {@link AbstractTopic#FETCH_ALL_POSTS} if
+	 *         there are no Posts in this Topic
+	 */
+	public abstract long getLastPostId();
 
 	/**
 	 * Adds a Subscriber to this Topic.
@@ -191,6 +211,11 @@ public abstract class AbstractTopic implements Iterable<Post> {
 		private final List<Packet> currPackets = new LinkedList<>();
 
 		@Override
+		public long getLastPostId() {
+			return posts.get(posts.size() - 1).getPostInfo().getId();
+		}
+
+		@Override
 		public void postHook(PostInfo postInfo) {
 			if (!currPackets.isEmpty() || (currPI != null))
 				throw new IllegalStateException("Received PostInfo while more Packets remain");
@@ -215,6 +240,44 @@ public abstract class AbstractTopic implements Iterable<Post> {
 		@Override
 		public Iterator<Post> iterator() {
 			return posts.iterator();
+		}
+	}
+
+	/**
+	 * Encapsulates a Token that identifies the last Post in a Topic. It is used when sending new
+	 * Topic so that only the necessary data is sent between the server and the client.
+	 *
+	 * @author Alex Mandelias
+	 * @author Dimitris Tsirmpas
+	 */
+	public static final class TopicToken implements Serializable {
+
+		private static final long serialVersionUID = 1L;
+
+		private final String topicName;
+		private final long   lastId;
+
+		private TopicToken(AbstractTopic abstractTopic) {
+			topicName = abstractTopic.getName();
+			lastId = abstractTopic.getLastPostId();
+		}
+
+		/**
+		 * Returns this TopicToken's topicName.
+		 *
+		 * @return the topicName
+		 */
+		public String getName() {
+			return topicName;
+		}
+
+		/**
+		 * Returns this TopicToken's lastId.
+		 *
+		 * @return the lastId
+		 */
+		public long getLastId() {
+			return lastId;
 		}
 	}
 }

@@ -2,7 +2,6 @@ package eventDeliverySystem.client;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -10,8 +9,6 @@ import java.util.Set;
 
 import eventDeliverySystem.dao.IProfileDAO;
 import eventDeliverySystem.datastructures.Post;
-import eventDeliverySystem.filesystem.FileSystemException;
-import eventDeliverySystem.filesystem.ProfileFileSystem;
 import eventDeliverySystem.server.ServerException;
 import eventDeliverySystem.client.UserEvent.Tag;
 import eventDeliverySystem.util.LG;
@@ -95,12 +92,12 @@ public final class User {
 	}
 
 	/**
-	 * Returns this User's current Profile.
+	 * Returns the name of this User's current Profile.
 	 *
-	 * @return the current Profile
+	 * @return the current Profile's name
 	 */
-	public Profile getCurrentProfile() {
-		return currentProfile;
+	public String getCurrentProfileName() {
+		return currentProfile.getName();
 	}
 
 	/**
@@ -112,7 +109,8 @@ public final class User {
 	 * @throws IOException if an I/O error occurs while interacting with the IProfileDAO object
 	 */
 	public void switchToNewProfile(String profileName) throws IOException {
-		currentProfile = profileDao.createNewProfile(profileName);
+		currentProfile = new Profile(profileName);
+		profileDao.createNewProfile(profileName);
 		consumer.setTopics(new HashSet<>(currentProfile.getTopics()));
 	}
 
@@ -125,7 +123,8 @@ public final class User {
 	 * @throws IOException if an I/O error occurs while interacting with the IProfileDAO object
 	 */
 	public void switchToExistingProfile(String profileName) throws IOException {
-		currentProfile = profileDao.loadProfile(profileName);
+		currentProfile = new Profile(profileName);
+		profileDao.loadProfile(profileName).forEach(currentProfile::addTopic);
 		consumer.setTopics(new HashSet<>(currentProfile.getTopics()));
 	}
 

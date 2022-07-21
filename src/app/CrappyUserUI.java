@@ -4,7 +4,6 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -81,7 +80,7 @@ public class CrappyUserUI extends JFrame {
 		createButton("File", e -> {
 			final User   user1      = CrappyUserUI.this.user;
 			final File   file       = new File(jtfs[0].getText());
-			final String posterName = user1.getCurrentProfile().getName();
+			final String posterName = user1.getCurrentProfileName();
 			tryPST(() -> {
 				Post post = Post.fromFile(file, posterName);
 				user1.post(post, jtfs[1].getText());
@@ -91,7 +90,7 @@ public class CrappyUserUI extends JFrame {
 		createButton("Text", e -> {
 			final User   user1      = CrappyUserUI.this.user;
 			final String text       = jtfs[0].getText();
-			final String posterName = user1.getCurrentProfile().getName();
+			final String posterName = user1.getCurrentProfileName();
 			final Post   post       = Post.fromText(text, posterName);
 			user1.post(post, jtfs[1].getText());
 		}, buttons, 1);

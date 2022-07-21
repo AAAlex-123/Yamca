@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * An extension of the Abstract Topic that stores data as required by Brokers. The Posts are stored
@@ -62,6 +63,27 @@ final class BrokerTopic extends AbstractTopic {
 
 		postInfoList.add(dummyPostInfo);
 		indexPerPostInfoId.put(AbstractTopic.FETCH_ALL_POSTS, 0);
+	}
+
+	@Override
+	public long getLastPostId() {
+
+		Predicate<PostInfo> isPostComplete = postInfo -> {
+			List<Packet> packetsOfLast = packetsPerPostInfoMap.get(postInfo.getId());
+			Packet lastPacket = packetsOfLast.get(packetsOfLast.size() - 1);
+			return lastPacket.isFinal();
+		};
+
+		// find last completed post
+		for (int i = postInfoList.size() - 1; i >= 1; i--) { // index 0 = dummyPostInfo
+			PostInfo postInfo = postInfoList.get(i);
+
+			if (isPostComplete.test(postInfo))
+				return postInfo.getId();
+		}
+
+		// no complete posts or no posts in this BrokerTopic
+		return AbstractTopic.FETCH_ALL_POSTS;
 	}
 
 	@Override

@@ -1,8 +1,9 @@
 package eventDeliverySystem.dao;
 
 import java.io.IOException;
+import java.util.Collection;
 
-import eventDeliverySystem.client.Profile;
+import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Post;
 
 /**
@@ -13,27 +14,26 @@ import eventDeliverySystem.datastructures.Post;
 public interface IProfileDAO {
 
     /**
-     * Creates a new, empty, Profile in this DAO.
+     * Creates a new, empty, Profile in this DAO. After this method returns, this DAO shall
+     * henceforth operate on that new Profile.
      *
      * @param profileName the name of the new Profile
      *
-     * @return the new Profile
-     *
      * @throws IOException if an I/O error occurs while creating the new Profile
      */
-    Profile createNewProfile(String profileName) throws IOException;
+    void createNewProfile(String profileName) throws IOException;
 
     /**
-     * Reads a Profile from this DAO and returns it as a Profile object. After this method returns,
-     * this DAO shall henceforth will operate on that new Profile.
+     * Loads all Topics for a Profile from this DAO. After this method returns, this DAO shall
+     * henceforth operate on that new Profile.
      *
      * @param profileName the id of the Profile to read
      *
-     * @return the Profile read
+     * @return a Collection including all the Topics loaded from this DAO
      *
-     * @throws IOException if an I/O error occurs while loading the Profile
+     * @throws IOException if an I/O error occurs while loading the Topics of the Profile
      */
-    Profile loadProfile(String profileName) throws IOException;
+    Collection<AbstractTopic> loadProfile(String profileName) throws IOException;
 
     /**
      * Creates a new Topic for the current Profile.

@@ -3,13 +3,12 @@ package eventDeliverySystem.filesystem;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
-import eventDeliverySystem.client.Profile;
-import eventDeliverySystem.datastructures.Topic;
 import eventDeliverySystem.dao.IProfileDAO;
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Post;
@@ -70,8 +69,9 @@ public final class ProfileFileSystem implements IProfileDAO {
 			throw new FileSystemException(profilesRootDirectory, e);
 		}
 	}
+
 	@Override
-	public Profile createNewProfile(String profileName) throws FileSystemException {
+	public void createNewProfile(String profileName) throws FileSystemException {
 		Path topicsDirectory = getTopicsDirectory(profileName);
 		try {
 			Files.createDirectory(topicsDirectory);
@@ -82,21 +82,13 @@ public final class ProfileFileSystem implements IProfileDAO {
 		topicFileSystemMap.put(profileName, new TopicFileSystem(topicsDirectory));
 
 		changeProfile(profileName);
-
-		return new Profile(profileName);
 	}
 
 	@Override
-	public Profile loadProfile(String profileName) throws FileSystemException {
+	public Collection<AbstractTopic> loadProfile(String profileName) throws FileSystemException {
 		changeProfile(profileName);
 
-		final Profile profile = new Profile(profileName);
-
-		final TopicFileSystem tfs = getTopicFileSystemForCurrentUser();
-		for (final AbstractTopic abstractTopic : tfs.readAllTopics())
-			profile.addTopic(new Topic(abstractTopic));
-
-		return profile;
+		return getTopicFileSystemForCurrentUser().readAllTopics();
 	}
 
 	@Override

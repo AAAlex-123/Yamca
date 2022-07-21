@@ -8,19 +8,19 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Post;
-import eventDeliverySystem.datastructures.Topic;
 
 /**
- * A data structure holding information about a Profile and their subscribed topics.
+ * A data structure holding information about a Profile and their subscribed Topics.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
-public final class Profile {
+final class Profile {
 
 	private final String               name;
-	private final Map<String, Topic>   topics;
+	private final Map<String, UserTopic>   topics;
 	private final Map<String, Integer> unreadTopics;
 
 	/**
@@ -28,13 +28,9 @@ public final class Profile {
 	 *
 	 * @param name the unique name of the Profile
 	 */
-	public Profile(String name) {
-		this(name, new HashMap<>());
-	}
-
-	private Profile(String name, Map<String, Topic> topics) {
+	Profile(String name) {
 		this.name = name;
-		this.topics = topics;
+		topics = new HashMap<>();
 		unreadTopics = new HashMap<>();
 	}
 
@@ -43,72 +39,87 @@ public final class Profile {
 	 *
 	 * @return the name
 	 */
-	public String getName() {
+	String getName() {
 		return name;
 	}
 
 	/**
-	 * Returns this Profile's topics.
+	 * Returns this Profile's User Topics.
 	 *
-	 * @return the topics
+	 * @return the User Topics
 	 */
-	public Set<Topic> getTopics() {
+	Set<UserTopic> getTopics() {
 		return new HashSet<>(topics.values());
 	}
 
 	/**
-	 * Adds a new, unique, Topic to this Profile.
+	 * Adds a new, unique, User Topic to this Profile.
 	 *
-	 * @param topicName the name of the new Topic
+	 * @param topicName the name of the new User Topic
 	 *
-	 * @throws IllegalArgumentException if a Topic with the same name already exists
+	 * @throws IllegalArgumentException if a User Topic with the same name already exists
 	 */
-	public void addTopic(String topicName) {
-		addTopic(new Topic(topicName));
+	void addTopic(String topicName) {
+		addTopic(new UserTopic(topicName));
 	}
 
 	/**
-	 * Adds a new Topic to this Profile.
+	 * Adds a new Abstract Topic to this Profile.
 	 *
-	 * @param topic the Topic
+	 * @param abstractTopic the Topic
 	 *
-	 * @throws NullPointerException     if {@code topic == null}
-	 * @throws IllegalArgumentException if a Topic with the same name already exists
+	 * @throws NullPointerException     if {@code abstractTopic == null}
+	 * @throws IllegalArgumentException if a User Topic with the same name already exists
 	 */
-	public void addTopic(Topic topic) {
-		if (topic == null)
+	void addTopic(AbstractTopic abstractTopic) {
+		if (abstractTopic == null)
 			throw new NullPointerException("Topic can't be null");
 
-		final String topicName = topic.getName();
+		addTopic(new UserTopic(abstractTopic));
+	}
+
+	/**
+	 * Adds a new User Topic to this Profile.
+	 *
+	 * @param userTopic the Topic
+	 *
+	 * @throws NullPointerException     if {@code userTopic == null}
+	 * @throws IllegalArgumentException if a User Topic with the same name already exists
+	 */
+	private void addTopic(UserTopic userTopic) {
+		if (userTopic == null)
+			throw new NullPointerException("Topic can't be null");
+
+		final String topicName = userTopic.getName();
 
 		assertTopicDoesNotExist(topicName);
 
-		topics.put(topicName, topic);
+		topics.put(topicName, userTopic);
 		unreadTopics.put(topicName, 0);
 	}
 
 	/**
-	 * Updates a Topic of this Profile with new Posts.
+	 * Updates a User Topic of this Profile with new Posts.
 	 *
-	 * @param topicName the name of the Topic to update
+	 * @param topicName the name of the User Topic to update
 	 * @param posts     the new Posts to post to the Topic
 	 *
-	 * @throws NoSuchElementException if no Topic with the given name exists
+	 * @throws NoSuchElementException if no User Topic with the given name exists
 	 */
-	public void updateTopic(String topicName, List<Post> posts) {
+	void updateTopic(String topicName, List<Post> posts) {
 		assertTopicExists(topicName);
 
-		topics.get(topicName).post(posts);
+		topics.get(topicName).postAll(posts);
 	}
 
 	/**
-	 * Removes a Topic from this Profile.
+	 * Removes a User Topic from this Profile.
 	 *
-	 * @param topicName the name of the Topic
+	 * @param topicName the name of the User Topic
 	 *
-	 * @throws NoSuchElementException if no Topic with the given name exists
+	 * @throws NoSuchElementException if no User Topic with the given name exists
 	 */
-	public void removeTopic(String topicName) {
+	void removeTopic(String topicName) {
 		assertTopicExists(topicName);
 
 		topics.remove(topicName);
@@ -116,26 +127,26 @@ public final class Profile {
 	}
 
 	/**
-	 * Marks a Topic as unread.
+	 * Marks a User Topic as unread.
 	 *
-	 * @param topicName the name of the Topic
+	 * @param topicName the name of the User Topic
 	 *
-	 * @throws NoSuchElementException if no Topic with the given name exists
+	 * @throws NoSuchElementException if no User Topic with the given name exists
 	 */
-	public void markUnread(String topicName) {
+	void markUnread(String topicName) {
 		assertTopicExists(topicName);
 
 		unreadTopics.put(topicName, unreadTopics.get(topicName) + 1);
 	}
 
 	/**
-	 * Marks all posts in a Topic as read.
+	 * Marks all posts in a User Topic as read.
 	 *
-	 * @param topicName the name of the Topic
+	 * @param topicName the name of the User Topic
 	 *
-	 * @throws NoSuchElementException if no Topic with the given name exists
+	 * @throws NoSuchElementException if no User Topic with the given name exists
 	 */
-	public void clearUnread(String topicName) {
+	void clearUnread(String topicName) {
 		assertTopicExists(topicName);
 
 		unreadTopics.put(topicName, 0);

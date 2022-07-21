@@ -19,7 +19,7 @@ import eventDeliverySystem.dao.ITopicDAO;
 import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.PostInfo;
-import eventDeliverySystem.datastructures.Topic.TopicToken;
+import eventDeliverySystem.datastructures.AbstractTopic.TopicToken;
 import eventDeliverySystem.thread.PullThread;
 import eventDeliverySystem.thread.PushThread;
 import eventDeliverySystem.thread.PushThread.Protocol;
