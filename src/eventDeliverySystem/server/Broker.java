@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -50,18 +51,25 @@ public final class Broker implements Runnable, AutoCloseable {
 	 * network.
 	 *
 	 * @param postDao the ITopicDAO object responsible for this Broker's Posts.
+	 * @param clientRequestSocket the unbound ServerSocket that will listen for incoming requests
+	 *                            from Clients
+	 * @param brokerRequestSocket the unbound ServerSocket that will listen for incoming requests
+	 *                            from Brokers
 	 *
 	 * @throws IOException if the server could not be started
 	 *
 	 * @see ITopicDAO
 	 */
-	public Broker(ITopicDAO postDao) throws IOException {
+	public Broker(ITopicDAO postDao, ServerSocket clientRequestSocket,
+				  ServerSocket brokerRequestSocket) throws IOException {
 		btm = new BrokerTopicManager(postDao);
 		btm.forEach(brokerTopic -> brokerTopic.subscribe(new BrokerTopicSubscriber(brokerTopic)));
 
+		this.clientRequestSocket = clientRequestSocket;
+		this.brokerRequestSocket = brokerRequestSocket;
 		try {
-			clientRequestSocket = new ServerSocket(0, 50, null);
-			brokerRequestSocket = new ServerSocket(0, 50, null);
+			this.clientRequestSocket.bind(new InetSocketAddress((InetAddress) null, 0), 50);
+			this.brokerRequestSocket.bind(new InetSocketAddress((InetAddress) null, 0), 50);
 		} catch (final IOException e) {
 			throw new UncheckedIOException("Could not open server socket: ", e);
 		}
@@ -75,9 +83,13 @@ public final class Broker implements Runnable, AutoCloseable {
 	/**
 	 * Create a non-leader broker and connect it to the server network.
 	 *
-	 * @param postDao    the ITopicDAO object responsible for this Broker's Posts.
-	 * @param leaderIP   the IP of the leader broker
-	 * @param leaderPort the port of the leader broker
+	 * @param postDao             the ITopicDAO object responsible for this Broker's Posts.
+	 * @param clientRequestSocket the unbound ServerSocket that will listen for incoming requests
+	 *                            from Clients
+	 * @param brokerRequestSocket the unbound ServerSocket that will listen for incoming requests
+	 *                            from Brokers
+	 * @param leaderIP            the IP of the leader broker
+	 * @param leaderPort          the port of the leader broker
 	 *
 	 * @throws IOException if this server could not be started or the connection to the leader
 	 * 					   broker could not be established.
@@ -85,8 +97,10 @@ public final class Broker implements Runnable, AutoCloseable {
 	 * @see ITopicDAO
 	 */
 	@SuppressWarnings("resource")
-	public Broker(ITopicDAO postDao, String leaderIP, int leaderPort) throws IOException {
-		this(postDao);
+	public Broker(ITopicDAO postDao, ServerSocket clientRequestSocket,
+				  ServerSocket brokerRequestSocket, String leaderIP, int leaderPort)
+			throws IOException {
+		this(postDao, clientRequestSocket, brokerRequestSocket);
 		try {
 			final Socket leaderConnection = new Socket(leaderIP, leaderPort);
 

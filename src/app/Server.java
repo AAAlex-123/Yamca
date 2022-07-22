@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.nio.file.Path;
 import java.util.Properties;
 import java.util.concurrent.ThreadLocalRandom;
@@ -112,7 +113,27 @@ public class Server {
 			return;
 		}
 
-		try (Broker broker = leader ? new Broker(postDao) : new Broker(postDao, ip, port)) {
+		ServerSocket crs = null;
+		ServerSocket brs;
+		try {
+			crs = new ServerSocket();
+			brs = new ServerSocket();
+		} catch (IOException e) {
+			LG.err("Could not open server sockets");
+			if (crs != null)
+				try {
+					crs.close();
+				} catch (IOException e1) {
+					LG.err("Error while closing the server sockets");
+					e1.printStackTrace();
+				}
+			return;
+		}
+
+		try (Broker broker = leader
+				? new Broker(postDao, crs, brs)
+				: new Broker(postDao, crs, brs, ip, port)) {
+
 			final String brokerId = leader
 					? "Leader"
 					: Integer.toString(ThreadLocalRandom.current().nextInt(1, 1000));
@@ -123,8 +144,16 @@ public class Server {
 		} catch (InterruptedException e) {
 			// do nothing
 		} catch (IOException e) {
-			LG.err("I/O error associated with path %s", path);
+			LG.err("IO error associated with path %s", path);
 			e.printStackTrace();
+		} finally {
+			try {
+				crs.close();
+				brs.close();
+			} catch (IOException e) {
+				LG.err("IO error while closing the server sockets");
+				e.printStackTrace();
+			}
 		}
 	}
 }
