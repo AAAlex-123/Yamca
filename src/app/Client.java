@@ -8,10 +8,8 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 import eventDeliverySystem.dao.IProfileDAO;
-import eventDeliverySystem.dao.ITopicDAO;
 import eventDeliverySystem.filesystem.FileSystemException;
 import eventDeliverySystem.filesystem.ProfileFileSystem;
-import eventDeliverySystem.filesystem.TopicFileSystem;
 import eventDeliverySystem.util.LG;
 
 /**
@@ -19,23 +17,32 @@ import eventDeliverySystem.util.LG;
  *
  * @author Alex Mandelias
  */
-public class Client {
+public final class Client {
+
+	private static final String LINE_SEP = System.lineSeparator();
+	private static final int MAX_PORT_NUMBER = 65_535;
 
 	// ARG_F_FLAG and ARG_PATH should be in the same position as ARG_IP and ARG_PORT respectively
-	private static final int ARG_CL_FLAG = 0, ARG_NAME = 1, ARG_IP = 2, ARG_PORT = 3, ARG_F_FLAG = 2, ARG_PATH = 3, ARG_USER_DIR = 4;
+	private static final int ARG_CL_FLAG = 0;
+	private static final int ARG_NAME = 1;
+	private static final int ARG_IP = 2;
+	private static final int ARG_PORT = 3;
+	private static final int ARG_F_FLAG = 2;
+	private static final int ARG_PATH = 3;
+	private static final int ARG_USER_DIR = 4;
 
-	private static final String USAGE = "Usage:\n"
-	        + "\t   java app.Client [-c|-l] <name> <ip> <port> <user_dir>\n"
-	        + "\tor java app.Client [-c|-l] <name> -f <path> <user_dir>\n"
-	        + "\n"
-	        + "Options:\n"
-	        + "\t-c\tcreate new user with the <name>\t\n"
-	        + "\t-l\tload existing user with the <name>\n"
-	        + "\t-f\tread connection configuration from file\n"
-	        + "\n"
-	        + "Where:\n"
-	        + "\t<ip>\t\tthe ip of the server\n"
-	        + "\t<port>\t\tthe port the server listens to (See 'Client Port' in the server console)\n"
+	private static final String USAGE = "Usage:" + LINE_SEP
+	        + "\t   java app.Client [-c|-l] <name> <ip> <port> <user_dir>" + LINE_SEP
+	        + "\tor java app.Client [-c|-l] <name> -f <path> <user_dir>" + LINE_SEP
+	        + LINE_SEP
+	        + "Options:" + LINE_SEP
+	        + "\t-c\tcreate new user with the <name>\t" + LINE_SEP
+	        + "\t-l\tload existing user with the <name>" + LINE_SEP
+	        + "\t-f\tread connection configuration from file" + LINE_SEP
+	        + LINE_SEP
+	        + "Where:" + LINE_SEP
+	        + "\t<ip>\t\tthe ip of the server" + LINE_SEP
+	        + "\t<port>\t\tthe port the server listens to (See 'Client Port' in the server console)" + LINE_SEP
 	        + "\t<path>\t\tthe file with the configuration\t<user_dir>\tthe directory in the file system to store the data";
 
 	private Client() {}
@@ -56,7 +63,6 @@ public class Client {
 		final String type = args[ARG_CL_FLAG];
 		final String name = args[ARG_NAME];
 
-		boolean existing = type.equals("-l");
 		switch (type) {
 		case "-c":
 		case "-l":
@@ -70,7 +76,7 @@ public class Client {
 		final String stringPort;
 		final int port;
 
-		if (args[ARG_F_FLAG].equals("-f")) {
+		if ("-f".equals(args[ARG_F_FLAG])) {
 			Properties props = new Properties();
 			try (FileInputStream fis = new FileInputStream(args[ARG_PATH])){
 				props.load(fis);
@@ -93,7 +99,7 @@ public class Client {
 
 		try {
 			port = Integer.parseInt(stringPort);
-			if (port < 0 || port > 65_535)
+			if (port <= 0 || port > Client.MAX_PORT_NUMBER)
 				throw new IllegalArgumentException();
 
 		} catch (final NumberFormatException e) {
@@ -116,6 +122,7 @@ public class Client {
 
 		CrappyUserUI ui;
 		try {
+			boolean existing = "-l".equals(type);
 			ui = new CrappyUserUI(existing, name, ip, port, profileDao);
 		} catch (final IOException e) {
 			LG.err("There was an I/O error either while interacting with the file system or"

@@ -20,22 +20,29 @@ import eventDeliverySystem.util.LG;
  *
  * @author Dimitris Tsirmpas
  */
-public class Server {
+public final class Server {
+
+	private static final String LINE_SEP = System.lineSeparator();
+	private static final int MAX_PORT_NUMBER = 65_535;
 
 	// ARG_FLAG and ARG_PATH should be in the same position as ARG_IP and ARG_PORT respectively
-	private static final int ARG_BROKER_DIR = 0, ARG_IP = 1, ARG_PORT = 2, ARG_FLAG = 1, ARG_PATH = 2;
+	private static final int ARG_BROKER_DIR = 0;
+	private static final int ARG_IP = 1;
+	private static final int ARG_PORT = 2;
+	private static final int ARG_FLAG = 1;
+	private static final int ARG_PATH = 2;
 
-	private static final String USAGE = "Usage:\n"
-	        + "\t   java app.Server <broker_dir>\n"
-	        + "\tor java app.Server <broker_dir> <ip> <port>\n"
-	        + "\tor java app.Server <broker_dir> -f <path>\n"
-	        + "\n"
-	        + "Options:\n"
-	        + "\t-f\tread connection configuration from file\n"
-	        + "Where:\n"
-	        + "\t<broker_dir>\t\t the directory where the topics will be saved for this server\n"
-	        + "\t<ip>\t\tthe ip of the first server (run 'ipconfig' on the first server)\n"
-	        + "\t<port>\t\tthe port the first server listens to (See 'Broker Port' in the first server's console)\n"
+	private static final String USAGE = "Usage:" + LINE_SEP
+	        + "\t   java app.Server <broker_dir>" + LINE_SEP
+	        + "\tor java app.Server <broker_dir> <ip> <port>" + LINE_SEP
+	        + "\tor java app.Server <broker_dir> -f <path>" + LINE_SEP
+	        + LINE_SEP
+	        + "Options:" + LINE_SEP
+	        + "\t-f\tread connection configuration from file" + LINE_SEP
+	        + "Where:" + LINE_SEP
+	        + "\t<broker_dir>\t\t the directory where the topics will be saved for this server" + LINE_SEP
+	        + "\t<ip>\t\tthe ip of the first server (run `ipconfig` on the first server)" + LINE_SEP
+	        + "\t<port>\t\tthe port the first server listens to (See 'Broker Port' in the first server's console)" + LINE_SEP
 	        + "\t<path>\t\tthe file with the configuration";
 
 	private Server() {}
@@ -70,7 +77,7 @@ public class Server {
 			port = -1;
 		} else {
 			final String stringPort;
-			if (args[ARG_FLAG].equals("-f")) {
+			if ("-f".equals(args[ARG_FLAG])) {
 				Properties props = new Properties();
 				try (FileInputStream fis = new FileInputStream(args[ARG_PATH])){
 					props.load(fis);
@@ -93,7 +100,7 @@ public class Server {
 
 			try {
 				port = Integer.parseInt(stringPort);
-				if (port < 0 || port > 65_535)
+				if (port <= 0 || port > Server.MAX_PORT_NUMBER)
 					throw new IllegalArgumentException();
 
 			} catch (final NumberFormatException e) {
@@ -136,13 +143,13 @@ public class Server {
 
 			final String brokerId = leader
 					? "Leader"
-					: Integer.toString(ThreadLocalRandom.current().nextInt(1, 1000));
+					: Integer.toString(ThreadLocalRandom.current().nextInt(1, 100));
 
 			final Thread thread = new Thread(broker, "Broker-" + brokerId);
 			thread.start();
 			thread.join();
 		} catch (InterruptedException e) {
-			// do nothing
+			System.exit(1);
 		} catch (IOException e) {
 			LG.err("IO error associated with path %s", path);
 			e.printStackTrace();

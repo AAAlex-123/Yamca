@@ -1,6 +1,8 @@
 package app;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +25,12 @@ import eventDeliverySystem.datastructures.Post;
  *
  * @author Alex Mandelias
  */
-public class CrappyUserUI extends JFrame {
+@SuppressWarnings("UnqualifiedStaticUsage")
+final class CrappyUserUI extends JFrame {
+
+	private static final int WIDTH = 800;
+	private static final int HEIGHT = 600;
+	private static final int PADDING = 15;
 
 	private final transient User user;
 
@@ -38,24 +45,17 @@ public class CrappyUserUI extends JFrame {
 	 *
 	 * @throws IOException if an I/O error occurs while creating the User object
 	 */
-	public CrappyUserUI(boolean existing, String name, String serverIP, int serverPort,
-						IProfileDAO profileDao) throws IOException {
+	CrappyUserUI(boolean existing, String name, String serverIP, int serverPort,
+				 IProfileDAO profileDao) throws IOException {
 		super(name);
 		if (existing)
 			user = User.loadExisting(serverIP, serverPort, profileDao, name);
 		else
 			user = User.createNew(serverIP, serverPort, profileDao, name);
 
-		user.addUserListener(new UserAdapter() {
-			@Override
-			public void onMessageReceived(UserEvent e) {
-				if (e.success)
-					JOptionPane.showMessageDialog(CrappyUserUI.this,
-							String.format("YOU HAVE A NEW MESSAGE AT '%s'", e.topicName));
-			}
-		});
+		user.addUserListener(new MyUserAdapter());
 
-		setSize(800, 600);
+		setSize(CrappyUserUI.WIDTH, CrappyUserUI.HEIGHT);
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
 		JPanel main = createMain();
@@ -66,8 +66,17 @@ public class CrappyUserUI extends JFrame {
 		this.pack();
 	}
 
-	private JPanel createMain() {
-		return new JPanel(new FlowLayout(FlowLayout.LEFT, 30, 0));
+	private class MyUserAdapter extends UserAdapter {
+		@Override
+		public void onMessageReceived(UserEvent e) {
+			if (e.success)
+				JOptionPane.showMessageDialog(CrappyUserUI.this,
+						String.format("YOU HAVE A NEW MESSAGE AT '%s'", e.topicName));
+		}
+	}
+
+	private static JPanel createMain() {
+		return new JPanel(new FlowLayout(FlowLayout.LEADING, PADDING * 2, 0));
 	}
 
 	private void addPostPanel(JPanel origin) {
@@ -125,16 +134,16 @@ public class CrappyUserUI extends JFrame {
 		// return main; // return the newly created JPanel
 	}
 
-	private JPanel createSection() {
-		return new JPanel(new BorderLayout(15, 15));
+	private static JPanel createSection() {
+		return new JPanel(new BorderLayout(PADDING, PADDING));
 	}
 
-	private void addTextFieldsToJPanel(JPanel origin, JTextField[] jtfs) {
+	private static void addTextFieldsToJPanel(JPanel origin, JTextField[] jtfs) {
 
 		JPanel main = new JPanel(new GridLayout(jtfs.length, 1, 0, 10));
 
 		for (int i = 0; i < jtfs.length; i++) {
-			jtfs[i] = new JTextField(15);
+			jtfs[i] = new JTextField(PADDING);
 			main.add(jtfs[i]);
 		}
 
@@ -142,17 +151,17 @@ public class CrappyUserUI extends JFrame {
 		// return main; // return the newly created JPanel
 	}
 
-	private void addButtonsToJPanel(JPanel origin, JButton... buttons) {
-		JPanel main = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
+	private static void addButtonsToJPanel(JPanel origin, JButton... buttons) {
+		JPanel main = new JPanel(new FlowLayout(FlowLayout.CENTER, PADDING, 0));
 		for (final JButton button : buttons) {
 			main.add(button);
 		}
 
-		origin.add(main, BorderLayout.SOUTH);
+		origin.add(main, BorderLayout.PAGE_END);
 		// return main; // return the newly created JPanel
 	}
 
-	private void createButton(String text, ActionListener l, JButton[] array, int index) {
+	private static void createButton(String text, ActionListener l, JButton[] array, int index) {
 		JButton button = new JButton(text);
 		button.addActionListener(l);
 		array[index] = button;
@@ -160,7 +169,7 @@ public class CrappyUserUI extends JFrame {
 
 	private interface ExceptionRunnable { void run() throws IOException; }
 
-	private void tryPST(ExceptionRunnable r) {
+	private static void tryPST(ExceptionRunnable r) {
 		try {
 			r.run();
 		} catch (IOException e) {
