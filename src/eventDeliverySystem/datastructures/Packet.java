@@ -13,7 +13,7 @@ public final class Packet implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final int PACKET_SIZE = (int) (512 * Math.pow(2, 10));
+	private static final int PACKET_SIZE = (int) Math.floor(512.0 * StrictMath.pow(2.0, 10.0));
 
 	/**
 	 * Breaks a Post into an array of Packets.
@@ -30,7 +30,7 @@ public final class Packet implements Serializable {
 		final byte[] src = post.getData();
 		final long   id  = post.getPostInfo().getId();
 
-		final int      packetCount = (int) Math.ceil(src.length / (double) Packet.PACKET_SIZE);
+		final int      packetCount = (int) Math.ceil((double) src.length / Packet.PACKET_SIZE);
 		final Packet[] packets     = new Packet[packetCount];
 
 		int srcPointer = 0;
@@ -75,7 +75,7 @@ public final class Packet implements Serializable {
 	 * @return the payload
 	 */
 	public byte[] getPayload() {
-		return payload;
+		return payload.clone();
 	}
 
 	/**

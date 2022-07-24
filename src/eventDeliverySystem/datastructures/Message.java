@@ -10,10 +10,11 @@ import java.io.Serializable;
  * @author Dimitris Tsirmpas
  */
 public final class Message implements Serializable {
+
 	private static final long serialVersionUID = 1L;
 
 	private final MessageType type;
-	private final Object      value;
+	private final Serializable value;
 
 	/**
 	 * Constructs a Message with the given {@link MessageType type} and value.
@@ -21,7 +22,7 @@ public final class Message implements Serializable {
 	 * @param type  the type of the message
 	 * @param value the value of the message
 	 */
-	public Message(MessageType type, Object value) {
+	public Message(MessageType type, Serializable value) {
 		this.type = type;
 		this.value = value;
 	}

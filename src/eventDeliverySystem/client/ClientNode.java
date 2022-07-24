@@ -11,6 +11,7 @@ import eventDeliverySystem.util.LG;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -234,7 +235,7 @@ abstract class ClientNode {
 		 *
 		 * @see #run()
 		 */
-		protected Object getMessageValue() {
+		protected Serializable getMessageValue() {
 			return topicName;
 		}
 	}

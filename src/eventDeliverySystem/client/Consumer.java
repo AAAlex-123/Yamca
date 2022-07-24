@@ -4,6 +4,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -313,7 +314,7 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		}
 
 		@Override
-		protected Object getMessageValue() {
+		protected Serializable getMessageValue() {
 			return userTopic.getToken();
 		}
 	}
@@ -352,7 +353,7 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		}
 
 		@Override
-		protected Object getMessageValue() {
+		protected Serializable getMessageValue() {
 			return userTopic.getToken();
 		}
 	}

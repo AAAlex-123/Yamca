@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -43,16 +44,14 @@ public final class Post {
 		final long idOfFirst = packets[0].getPostId();
 
 		int dataPointer = 0;
-		for (int i = 0, packetCount = packets.length; i < packetCount; i++) {
-			final Packet curr = packets[i];
-
+		for (final Packet curr : packets) {
 			if (curr.getPostId() != idOfFirst)
 				throw new IllegalStateException(String.format(
-				        "Tried to combine packet with ID %d with packet with ID %d", idOfFirst,
-				        curr.getPostId()));
+						"Tried to combine packet with ID %d with packet with ID %d", idOfFirst,
+						curr.getPostId()));
 
 			final byte[] payload = curr.getPayload();
-			final int    length  = payload.length;
+			final int length = payload.length;
 			System.arraycopy(payload, 0, data, dataPointer, length);
 			dataPointer += length;
 		}
@@ -71,22 +70,22 @@ public final class Post {
 	 * @throws FileNotFoundException if the File could not be found
 	 * @throws IOException           if an I/O Error occurs
 	 */
-	public static Post fromFile(File file, String posterName)
-	        throws FileNotFoundException, IOException {
+	public static Post fromFile(File file, String posterName) throws IOException {
 
 		byte[] data;
 		try (FileInputStream fis = new FileInputStream(file)) {
 			List<Integer> bytes = new LinkedList<>();
 
-			int nextByte;
-			while ((nextByte = fis.read()) != -1) {
+			int nextByte = fis.read();
+			while (nextByte != -1) {
 				bytes.add(nextByte);
+				nextByte = fis.read();
 			}
 
 			data = new byte[bytes.size()];
 			int index = 0;
-			for (int b : bytes) {
-				data[index] = (byte) b;
+			for (Integer b : bytes) {
+				data[index] = b.byteValue();
 				index++;
 			}
 		}
@@ -106,7 +105,7 @@ public final class Post {
 	 * @return the Post that encapsulates the plain-text message
 	 */
 	public static Post fromText(String text, String posterName) {
-		return new Post(text.getBytes(), posterName, "~txt");
+		return new Post(text.getBytes(StandardCharsets.UTF_8), posterName, "~txt");
 	}
 
 	private final byte[]   data;
@@ -119,7 +118,7 @@ public final class Post {
 	 * @param postInfo the PostInfo object associated with this Post
 	 */
 	public Post(byte[] data, PostInfo postInfo) {
-		this.data = data;
+		this.data = data.clone();
 		this.postInfo = postInfo;
 	}
 

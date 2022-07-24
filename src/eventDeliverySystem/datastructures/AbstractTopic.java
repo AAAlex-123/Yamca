@@ -2,6 +2,7 @@ package eventDeliverySystem.datastructures;
 
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
@@ -50,8 +51,6 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	 * @param name the name of the new Topic
 	 */
 	protected AbstractTopic(String name) {
-		// TODO: throw NPE if name == null
-		// TODO: add @throws in javadoc
 		this.name = name;
 		subscribers = new HashSet<>();
 	}
@@ -160,7 +159,7 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	public static int hashForTopic(String topicName) {
 		try {
 			final MessageDigest a = MessageDigest.getInstance("md5");
-			final byte[]        b = a.digest(topicName.getBytes());
+			final byte[]        b = a.digest(topicName.getBytes(StandardCharsets.UTF_8));
 
 			// big brain stuff
 			final int    FOUR = 4;
@@ -169,7 +168,7 @@ public abstract class AbstractTopic implements Iterable<Post> {
 			final byte[] e    = new byte[c];
 			for (int f = 0; f < e.length; f++)
 				for (int g = 0; g < d; g++)
-					e[f] ^= (b[(d * f) + g]);
+					e[f] = (byte) (e[f] ^ (b[(d * f) + g]));
 
 			final BigInteger h = new BigInteger(e);
 			return h.intValueExact();
@@ -201,13 +200,15 @@ public abstract class AbstractTopic implements Iterable<Post> {
 
 	private static final class SimpleTopic extends AbstractTopic {
 
+		private static final Packet[] ZERO_LENGTH_PACKET_ARRAY = new Packet[0];
+
 		private final List<Post> posts = new LinkedList<>();
 
 		private SimpleTopic(String name) {
 			super(name);
 		}
 
-		private PostInfo currPI;
+		private PostInfo currPI = null;
 		private final List<Packet> currPackets = new LinkedList<>();
 
 		@Override
@@ -217,7 +218,7 @@ public abstract class AbstractTopic implements Iterable<Post> {
 
 		@Override
 		public void postHook(PostInfo postInfo) {
-			if (!currPackets.isEmpty() || (currPI != null))
+			if (!currPackets.isEmpty())
 				throw new IllegalStateException("Received PostInfo while more Packets remain");
 
 			currPI = postInfo;
@@ -228,11 +229,11 @@ public abstract class AbstractTopic implements Iterable<Post> {
 			currPackets.add(packet);
 
 			if (packet.isFinal()) {
-				final Packet[] data          = currPackets.toArray(new Packet[currPackets.size()]);
+				final Packet[] data          = currPackets.toArray(
+						SimpleTopic.ZERO_LENGTH_PACKET_ARRAY);
 				final Post     completedPost = Post.fromPackets(data, currPI);
 				posts.add(completedPost);
 
-				currPI = null;
 				currPackets.clear();
 			}
 		}
@@ -240,6 +241,20 @@ public abstract class AbstractTopic implements Iterable<Post> {
 		@Override
 		public Iterator<Post> iterator() {
 			return posts.iterator();
+		}
+
+		@Override
+		public int hashCode() {
+			return super.hashCode();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (!super.equals(obj))
+				return false;
+			return (obj instanceof SimpleTopic);
 		}
 	}
 
