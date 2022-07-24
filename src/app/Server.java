@@ -146,14 +146,6 @@ public class Server {
 		} catch (IOException e) {
 			LG.err("IO error associated with path %s", path);
 			e.printStackTrace();
-		} finally {
-			try {
-				crs.close();
-				brs.close();
-			} catch (IOException e) {
-				LG.err("IO error while closing the server sockets");
-				e.printStackTrace();
-			}
 		}
 	}
 }
