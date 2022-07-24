@@ -6,6 +6,7 @@ import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.dao.ITopicDAO;
+import eventDeliverySystem.util.LG;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -24,17 +25,20 @@ import java.util.function.Predicate;
  */
 final class BrokerTopic extends AbstractTopic {
 
-	private static final PostInfo dummyPostInfo;
-
-	static {
-		dummyPostInfo = new PostInfo(null, null, AbstractTopic.FETCH_ALL_POSTS);
-	}
+	private static final Packet[] ZERO_LENGTH_PACKET_ARRAY = new Packet[0];
+	private static final PostInfo dummyPostInfo =
+			new PostInfo(null, null, AbstractTopic.FETCH_ALL_POSTS);
 
 	private final ITopicDAO postDAO;
 
 	private final List<PostInfo>          postInfoList = new LinkedList<>();
 	private final Map<Long, List<Packet>> packetsPerPostInfoMap = new HashMap<>();
 	private final Map<Long, Integer>      indexPerPostInfoId = new HashMap<>();
+
+	{
+		postInfoList.add(BrokerTopic.dummyPostInfo);
+		indexPerPostInfoId.put(AbstractTopic.FETCH_ALL_POSTS, 0);
+	}
 
 	/**
 	 * Constructs a BrokerTopic that contains the posts of another Topic.
@@ -60,9 +64,6 @@ final class BrokerTopic extends AbstractTopic {
 	BrokerTopic(String name, ITopicDAO postDAO) {
 		super(name);
 		this.postDAO = postDAO;
-
-		postInfoList.add(dummyPostInfo);
-		indexPerPostInfoId.put(AbstractTopic.FETCH_ALL_POSTS, 0);
 	}
 
 	@Override
@@ -105,19 +106,6 @@ final class BrokerTopic extends AbstractTopic {
 	}
 
 	/**
-	 * Adds to the given List and the Map all the PostInfo and Packet objects in this Topic.
-	 *
-	 * @param emptyPostInfoList          the empty list where the PostInfo objects will be added,
-	 *                                   sorted from earliest to latest
-	 * @param emptyPacketsPerPostInfoMap the empty map where the Packets of every PostInfo object
-	 *                                   will be added
-	 */
-	void getAllPosts(List<PostInfo> emptyPostInfoList,
-	        Map<Long, Packet[]> emptyPacketsPerPostInfoMap) {
-		getPostsSince(AbstractTopic.FETCH_ALL_POSTS, emptyPostInfoList, emptyPacketsPerPostInfoMap);
-	}
-
-	/**
 	 * Adds to the given List and the Map all the PostInfo and Packet objects in this Topic starting
 	 * from a certain PostInfo object. The PostInfo with the given ID and its Packets are not
 	 * returned.
@@ -129,20 +117,16 @@ final class BrokerTopic extends AbstractTopic {
 	 *                                   will be added
 	 */
 	synchronized void getPostsSince(long postId, List<PostInfo> emptyPostInfoList,
-	        Map<Long, Packet[]> emptyPacketsPerPostInfoMap) {
+									Map<? super Long, Packet[]> emptyPacketsPerPostInfoMap) {
 
 		final Integer index = indexPerPostInfoId.get(postId);
-
-		// broker is not persistent, consumer may have posts from previous session, not an error
-		if (index == null)
-			return;
 
 		emptyPostInfoList.addAll(postInfoList.subList(index + 1, postInfoList.size()));
 
 		for (PostInfo pi : emptyPostInfoList) {
 			final long         id = pi.getId();
 			final List<Packet> ls = packetsPerPostInfoMap.get(id);
-			emptyPacketsPerPostInfoMap.put(id, ls.toArray(new Packet[ls.size()]));
+			emptyPacketsPerPostInfoMap.put(id, ls.toArray(BrokerTopic.ZERO_LENGTH_PACKET_ARRAY));
 		}
 	}
 
@@ -154,9 +138,10 @@ final class BrokerTopic extends AbstractTopic {
 	 * @throws IOException if an I/O Error occurs while saving the Post.
 	 */
 	void savePostToTFS(long postId) throws IOException {
+		LG.sout("BrokerTopic#savePostToTFS(%d)", postId);
 		PostInfo pi = postInfoList.get(indexPerPostInfoId.get(postId));
 		final List<Packet> ls = packetsPerPostInfoMap.get(postId);
-		Packet[] packets = ls.toArray(new Packet[ls.size()]);
+		Packet[] packets = ls.toArray(BrokerTopic.ZERO_LENGTH_PACKET_ARRAY);
 
 		Post post = Post.fromPackets(packets, pi);
 		postDAO.writePost(post, getName());

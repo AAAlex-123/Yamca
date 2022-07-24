@@ -2,6 +2,9 @@ package eventDeliverySystem.server;
 
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.dao.ITopicDAO;
+import eventDeliverySystem.datastructures.Packet;
+import eventDeliverySystem.datastructures.PostInfo;
+import eventDeliverySystem.datastructures.Subscriber;
 import eventDeliverySystem.util.LG;
 
 import java.io.IOException;
@@ -9,6 +12,7 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -46,7 +50,7 @@ final class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         for (final Set<Socket> consumerSocketSet : consumerSocketsPerTopic.values())
             for (final Socket socket : consumerSocketSet) {
                 socket.shutdownOutput();
@@ -81,12 +85,8 @@ final class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> {
      *
      * @throws NoSuchElementException if no BrokerTopic with that name exists in this manager
      */
-    BrokerTopic getTopic(String topicName) throws NoSuchElementException {
-        assertTopicExists(topicName);
-
-        synchronized (topicsByName) {
-           return topicsByName.get(topicName);
-       }
+    BrokerTopic getTopic(String topicName) {
+        return getTopic0(topicName);
     }
 
     /**
@@ -155,6 +155,44 @@ final class BrokerTopicManager implements AutoCloseable, Iterable<BrokerTopic> {
 
         synchronized (consumerSocketsPerTopic) {
             consumerSocketsPerTopic.get(topicName).add(socket);
+        }
+    }
+
+    /**
+     * Adds to the given List and the Map all the PostInfo and Packet objects in a BrokerTopic in
+     * this manager, starting from a certain PostInfo object. The PostInfo with the given ID and its
+     * Packets are not returned.
+     *
+     * @param topicName the name of the BrokerTopic whose data to extract
+     * @param postId    the ID of the PostInfo
+     * @param piList    the empty list where the PostInfo objects will be added, sorted from
+     *                  earliest to latest
+     * @param packetMap the empty map where the Packets of every PostInfo object will be added
+     *
+     * @throws NoSuchElementException if no BrokerTopic with that name exists in this manager.
+     */
+    void getPostsFromTopicSince(String topicName, long postId, List<PostInfo> piList,
+                                Map<? super Long, Packet[]> packetMap) {
+        getTopic0(topicName).getPostsSince(postId, piList, packetMap);
+    }
+
+    /**
+     * Adds a Subscriber to a BrokerTopic in this manager.
+     *
+     * @param topicName the name of the BrokerTopic to which to add the subscriber
+     * @param subscriber the Subscriber to add
+     *
+     * @throws NoSuchElementException if no BrokerTopic with that name exists in this manager.
+     */
+    void addSubscriberToTopic(String topicName, Subscriber subscriber) {
+        getTopic0(topicName).subscribe(subscriber);
+    }
+
+    private BrokerTopic getTopic0(String topicName) throws NoSuchElementException {
+        assertTopicExists(topicName);
+
+        synchronized (topicsByName) {
+            return topicsByName.get(topicName);
         }
     }
 

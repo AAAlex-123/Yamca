@@ -16,20 +16,20 @@ import eventDeliverySystem.util.LG;
 import eventDeliverySystem.datastructures.Subscriber;
 
 /**
- * A thread that upon receiving new packets for a Topic, streams them to a Consumer.
+ * A Thread responsible for streaming newly received packets for a BrokerTopic to a single Consumer.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
  */
 final class BrokerPushThread extends Thread implements Subscriber {
 
-	private static final long NO_CURRENT_POST_ID = -1;
+	private static final long NO_CURRENT_POST_ID = -1L;
 
-	private long                          currentPostId;
-	private final Deque<PostInfo>         postInfos;
-	private final Map<Long, List<Packet>> buffers;
+	private long                          currentPostId = BrokerPushThread.NO_CURRENT_POST_ID;
+	private final Deque<PostInfo>         postInfos = new LinkedList<>();
+	private final Map<Long, List<Packet>> buffers = new HashMap<>();
 
-	private final Queue<Object>      queue;
+	private final Queue<Object>      queue = new LinkedList<>();
 	private final ObjectOutputStream oos;
 
 	private final Object monitor = new Object();
@@ -44,19 +44,13 @@ final class BrokerPushThread extends Thread implements Subscriber {
 	BrokerPushThread(AbstractTopic topic, ObjectOutputStream stream) {
 		super("BrokerPushThread-" + topic.getName());
 		topic.subscribe(this);
-
-		currentPostId = BrokerPushThread.NO_CURRENT_POST_ID;
-		postInfos = new LinkedList<>();
-		buffers = new HashMap<>();
-
-		queue = new LinkedList<>();
 		oos = stream;
 	}
 
 	@Override
 	public void run() {
-		boolean isEmpty;
 		while (true) {
+			boolean isEmpty;
 			synchronized (queue) {
 				isEmpty = queue.isEmpty();
 			}
@@ -66,7 +60,14 @@ final class BrokerPushThread extends Thread implements Subscriber {
 					synchronized (monitor) {
 						monitor.wait();
 					}
-				} catch (final InterruptedException e) {}
+				} catch (final InterruptedException e) {
+					try {
+						oos.close();
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+					Thread.currentThread().interrupt();
+				}
 
 				synchronized (queue) {
 					isEmpty = queue.isEmpty();
@@ -118,8 +119,14 @@ final class BrokerPushThread extends Thread implements Subscriber {
 		// if no post is being streamed
 		assert currentPostId != BrokerPushThread.NO_CURRENT_POST_ID;
 
-		// if packet belongs to post being streamed
-		if (packet.getPostId() == currentPostId) {
+		// if packet does not belong to post being streamed
+		long incomingPostId = packet.getPostId();
+		if (incomingPostId != currentPostId) {
+
+			// add packet to buffer because it's not being streamed
+			buffers.get(incomingPostId).add(packet);
+
+		} else {
 			// stream packet
 			queue.add(packet);
 
@@ -152,9 +159,6 @@ final class BrokerPushThread extends Thread implements Subscriber {
 					// keep streaming the next post in buffer if the previous has been fully streamed
 				} while (finalReached);
 			}
-		} else {
-			// add packet to buffer because it's not being streamed
-			buffers.get(packet.getPostId()).add(packet);
 		}
 
 		synchronized (monitor) {
@@ -163,23 +167,23 @@ final class BrokerPushThread extends Thread implements Subscriber {
 	}
 
 	private boolean emptyBufferOfCurrentPost() {
-		boolean finalReached = false;
 
 		final List<Packet> buffer = buffers.get(currentPostId);
-		for (final Packet packetInBuffer : buffer) {
+		final Packet lastPacket = buffer.get(buffer.size() - 1);
 
-			assert !finalReached;
+		for (final Packet packetInBuffer : buffer) {
 
 			// stream packet
 			queue.add(packetInBuffer);
 
-			// mark if this post has been fully streamed
-			finalReached |= packetInBuffer.isFinal();
+			assert !(packetInBuffer.isFinal() && (packetInBuffer != lastPacket));
 		}
 
-		if (finalReached)
+		// whether this post has been fully streamed
+		boolean fullyStreamed = lastPacket.isFinal();
+		if (fullyStreamed)
 			buffers.remove(currentPostId);
 
-		return finalReached;
+		return fullyStreamed;
 	}
 }
