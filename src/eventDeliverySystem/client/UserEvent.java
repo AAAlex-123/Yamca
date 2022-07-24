@@ -104,6 +104,6 @@ public final class UserEvent {
         TOPIC_LOADED,
 
         /** Used with events fired when the user has stopped listening to a topic */
-        TOPIC_LISTEN_STOPPED;
+        TOPIC_LISTEN_STOPPED,
     }
 }

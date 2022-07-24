@@ -22,7 +22,7 @@ import eventDeliverySystem.server.ServerException;
  */
 final class CIManager {
 
-	private final Map<String, ConnectionInfo> cache;
+	private final Map<String, ConnectionInfo> cache = new HashMap<>();
 
 	private final InetAddress defaultBrokerIP;
 	private final int         defaultBrokerPort;
@@ -34,7 +34,6 @@ final class CIManager {
 	 * @param defaultBrokerPort the Port of the default Broker to connect to
 	 */
 	CIManager(InetAddress defaultBrokerIP, int defaultBrokerPort) {
-		cache = new HashMap<>();
 		this.defaultBrokerIP = defaultBrokerIP;
 		this.defaultBrokerPort = defaultBrokerPort;
 	}
@@ -50,13 +49,13 @@ final class CIManager {
 	 * @throws ServerException if a connection to the server fails
 	 */
 	ConnectionInfo getConnectionInfoForTopic(String topicName) throws ServerException {
-		ConnectionInfo address = cache.get(topicName);
-		if (address != null)
-			return address;
+		final ConnectionInfo cachedAddress = cache.get(topicName);
+		if (cachedAddress != null)
+			return cachedAddress;
 
-		address = getCIForTopic(topicName);
-		cache.put(topicName, address);
-		return address;
+		final ConnectionInfo newAddress = getCIForTopic(topicName);
+		cache.put(topicName, newAddress);
+		return newAddress;
 	}
 
 	private ConnectionInfo getCIForTopic(String topicName) throws ServerException {
@@ -67,15 +66,10 @@ final class CIManager {
 			oos.flush();
 			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
-			final ConnectionInfo actualBrokerCIForTopic;
-			try {
-				actualBrokerCIForTopic = (ConnectionInfo) ois.readObject();
-			} catch (final ClassNotFoundException e) {
-				throw new RuntimeException(e);
-			}
+			return (ConnectionInfo) ois.readObject();
 
-			return actualBrokerCIForTopic;
-
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
 		} catch (final IOException e) {
 			throw new ServerException("Connection to main server failed", e);
 		}

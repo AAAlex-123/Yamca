@@ -38,7 +38,7 @@ import eventDeliverySystem.datastructures.Subscriber;
  */
 final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 
-	private final TopicManager topicManager;
+	private final TopicManager topicManager = new TopicManager();
 
 	/**
 	 * Constructs a Consumer that will connect to a specific default broker.
@@ -53,7 +53,7 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 *                              address while resolving the defaultServerIP.
 	 */
 	Consumer(String serverIP, int serverPort, UserStub userStub) throws UnknownHostException {
-		this(InetAddress.getByName(serverIP), serverPort, userStub);
+		super(serverIP, serverPort, userStub);
 	}
 
 	/**
@@ -67,19 +67,7 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 * @throws UnknownHostException if IP address is of illegal length
 	 */
 	Consumer(byte[] serverIP, int serverPort, UserStub userStub) throws UnknownHostException {
-		this(InetAddress.getByAddress(serverIP), serverPort, userStub);
-	}
-
-	/**
-	 * Constructs a Consumer that will connect to a specific default broker.
-	 *
-	 * @param ip       the InetAddress of the default broker
-	 * @param port     the port of the default broker
-	 * @param userStub the UserSub object that will be notified when data arrives
-	 */
-	private Consumer(InetAddress ip, int port, UserStub userStub) {
-		super(ip, port, userStub);
-		topicManager = new TopicManager();
+		super(serverIP, serverPort, userStub);
 	}
 
 	@Override
@@ -178,12 +166,11 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		private static final class TopicData {
 			final UserTopic userTopic;
 			long pointer;
-			Socket      socket;
+			Socket      socket = null;
 
 			private TopicData(UserTopic userTopic) {
 				this.userTopic = userTopic;
 				pointer = userTopic.getLastPostId();
-				socket = null;
 			}
 		}
 
@@ -273,7 +260,6 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 				for (final TopicManager.TopicData td : tdMap.values())
 					td.socket.close();
 			} catch (IOException e) {
-				// TODO: maybe come up with a better message
 				throw new ServerException(ClientNode.CONNECTION_TO_SERVER_LOST_STRING, e);
 			}
 

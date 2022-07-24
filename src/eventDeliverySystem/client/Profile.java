@@ -20,8 +20,8 @@ import eventDeliverySystem.datastructures.Post;
 final class Profile {
 
 	private final String               name;
-	private final Map<String, UserTopic>   topics;
-	private final Map<String, Integer> unreadTopics;
+	private final Map<String, UserTopic>   topics = new HashMap<>();
+	private final Map<String, Integer> unreadTopics = new HashMap<>();
 
 	/**
 	 * Creates a new, empty, Profile with the specified name.
@@ -30,8 +30,6 @@ final class Profile {
 	 */
 	Profile(String name) {
 		this.name = name;
-		topics = new HashMap<>();
-		unreadTopics = new HashMap<>();
 	}
 
 	/**
@@ -137,6 +135,21 @@ final class Profile {
 		assertTopicExists(topicName);
 
 		unreadTopics.put(topicName, unreadTopics.get(topicName) + 1);
+	}
+
+	/**
+	 * Returns the unread count for a Topic.
+	 *
+	 * @param topicName the name of the User Topic
+	 *
+	 * @return the number of unread Posts in that Topic
+	 *
+	 * @throws NoSuchElementException if no User Topic with the given name exists
+	 */
+	int getUnread(String topicName) {
+		assertTopicExists(topicName);
+
+		return unreadTopics.get(topicName);
 	}
 
 	/**

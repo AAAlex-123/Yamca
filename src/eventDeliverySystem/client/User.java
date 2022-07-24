@@ -2,12 +2,14 @@ package eventDeliverySystem.client;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
 import eventDeliverySystem.dao.IProfileDAO;
+import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.server.ServerException;
 import eventDeliverySystem.client.UserEvent.Tag;
@@ -30,7 +32,7 @@ public final class User {
 	private final UserStub userStub = new UserStub();
 
 	private final IProfileDAO profileDao;
-	private Profile                 currentProfile;
+	private Profile                 currentProfile = null;
 
 	private final Publisher publisher;
 	private final Consumer  consumer;
@@ -101,6 +103,26 @@ public final class User {
 	}
 
 	/**
+	 * Returns a Collection of this User's Topics.
+	 *
+	 * @return a Collection of this User's Topics
+	 */
+	public Collection<AbstractTopic> getAllTopics() {
+		return new HashSet<>(currentProfile.getTopics());
+	}
+
+	/**
+	 * Returns the number of unread Posts for a Topic.
+	 *
+	 * @param topicName the name of the Topic
+	 *
+	 * @return the unread count for that Topic
+	 */
+	public int getUnreadCount(String topicName) {
+		return currentProfile.getUnread(topicName);
+	}
+
+	/**
 	 * Switches this User to manage a new Profile.
 	 *
 	 * @param profileName the name of the new Profile
@@ -141,7 +163,7 @@ public final class User {
 		LG.sout("User#post(%s, %s)", post, topicName);
 		LG.in();
 
-		if (!isUserSubscribed(topicName)) {
+		if (userIsNotSubscribed(topicName)) {
 			userStub.fireEvent(UserEvent.failed(Tag.MESSAGE_SENT, topicName,
 					new NoSuchElementException("This User can't post to Topic " + topicName
 											   + " because they aren't subscribed to it")));
@@ -178,7 +200,7 @@ public final class User {
 		LG.sout("User#deleteTopic(%s)", topicName);
 		LG.in();
 
-		if (!isUserSubscribed(topicName)) {
+		if (userIsNotSubscribed(topicName)) {
 			userStub.fireEvent(UserEvent.failed(Tag.TOPIC_DELETED, topicName,
 					new NoSuchElementException("This User can't delete Topic " + topicName
 											   + " because they aren't subscribed to it")));
@@ -204,6 +226,7 @@ public final class User {
 		final List<Post> newPosts = consumer.pull(topicName); // sorted from earliest to latest
 		LG.sout("newPosts=%s", newPosts);
 		currentProfile.updateTopic(topicName, newPosts);
+		currentProfile.clearUnread(topicName);
 
 		for (final Post post : newPosts) {
 			LG.sout("Saving Post '%s'", post);
@@ -238,7 +261,7 @@ public final class User {
 		LG.sout("User#stopListeningForTopic(%s)", topicName);
 		LG.in();
 
-		if (!isUserSubscribed(topicName)) {
+		if (userIsNotSubscribed(topicName)) {
 			userStub.fireEvent(UserEvent.failed(Tag.TOPIC_LISTEN_STOPPED, topicName,
 					new NoSuchElementException("This User can't unsubscribe from Topic " + topicName
 											   + " because they aren't subscribed to it")));
@@ -258,40 +281,9 @@ public final class User {
 		listener.addListener(l);
 	}
 
-	private boolean isUserSubscribed(String topicName) {
-		return currentProfile.getTopics().stream().anyMatch(topic -> topic.getName().equals(topicName));
-	}
-
-	private void processEvent(UserEvent e) {
-		switch (e.tag) {
-		case MESSAGE_SENT:
-			listener.onMessageSent(e);
-			break;
-		case MESSAGE_RECEIVED:
-			listener.onMessageReceived(e);
-			break;
-		case TOPIC_CREATED:
-			listener.onTopicCreated(e);
-			break;
-		case TOPIC_DELETED:
-			listener.onTopicDeleted(e);
-			break;
-		case SERVER_TOPIC_DELETED:
-			listener.onServerTopicDeleted(e);
-			break;
-		case TOPIC_LISTENED:
-			listener.onTopicListened(e);
-			break;
-		case TOPIC_LOADED:
-			listener.onTopicLoaded(e);
-			break;
-		case TOPIC_LISTEN_STOPPED:
-			listener.onTopicListenStopped(e);
-			break;
-		default:
-			throw new IllegalArgumentException(
-					"You forgot to put a case for the new UserEvent#Tag enum");
-		}
+	private boolean userIsNotSubscribed(String topicName) {
+		return currentProfile.getTopics().stream()
+							 .noneMatch(topic -> topic.getName().equals(topicName));
 	}
 
 	/**
@@ -309,7 +301,35 @@ public final class User {
 		 * @param e the event to fire
 		 */
 		void fireEvent(UserEvent e) {
-			User.this.processEvent(e);
+			switch (e.tag) {
+			case MESSAGE_SENT:
+				User.this.listener.onMessageSent(e);
+				break;
+			case MESSAGE_RECEIVED:
+				User.this.listener.onMessageReceived(e);
+				break;
+			case TOPIC_CREATED:
+				User.this.listener.onTopicCreated(e);
+				break;
+			case TOPIC_DELETED:
+				User.this.listener.onTopicDeleted(e);
+				break;
+			case SERVER_TOPIC_DELETED:
+				User.this.listener.onServerTopicDeleted(e);
+				break;
+			case TOPIC_LISTENED:
+				User.this.listener.onTopicListened(e);
+				break;
+			case TOPIC_LOADED:
+				User.this.listener.onTopicLoaded(e);
+				break;
+			case TOPIC_LISTEN_STOPPED:
+				User.this.listener.onTopicListenStopped(e);
+				break;
+			default:
+				throw new IllegalArgumentException(
+						"You forgot to put a case for the new UserEvent#Tag enum");
+			}
 		}
 	}
 

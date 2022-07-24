@@ -22,11 +22,12 @@ import eventDeliverySystem.util.LG;
  */
 final class UserTopic extends AbstractTopic {
 
+	private static final Packet[] ZERO_LENGTH_PACKET_ARRAY = new Packet[0];
 	private static final Post dummyPost;
 
 	static {
 		PostInfo dummyPI = new PostInfo(null, null, AbstractTopic.FETCH_ALL_POSTS);
-		dummyPost = new Post(null, dummyPI);
+		dummyPost = new Post(new byte[0], dummyPI);
 	}
 
 	// first element is the first post added
@@ -52,7 +53,7 @@ final class UserTopic extends AbstractTopic {
 	 */
 	UserTopic(String name) {
 		super(name);
-		post(dummyPost);
+		post(UserTopic.dummyPost);
 	}
 
 	@Override
@@ -61,11 +62,11 @@ final class UserTopic extends AbstractTopic {
 	}
 
 	private final List<Packet> currPackets = new LinkedList<>();
-	private PostInfo           currPI;
+	private PostInfo           currPI = null;
 
 	@Override
 	public void postHook(PostInfo postInfo) {
-		if (!currPackets.isEmpty() || (currPI != null))
+		if (!currPackets.isEmpty())
 			throw new IllegalStateException("Received PostInfo while more Packets remain");
 
 		currPI = postInfo;
@@ -76,12 +77,11 @@ final class UserTopic extends AbstractTopic {
 		currPackets.add(packet);
 
 		if (packet.isFinal()) {
-			final Packet[] data          = currPackets.toArray(new Packet[currPackets.size()]);
+			final Packet[] data          = currPackets.toArray(UserTopic.ZERO_LENGTH_PACKET_ARRAY);
 			final Post     completedPost = Post.fromPackets(data, currPI);
 			post(completedPost);
 
 			currPackets.clear();
-			currPI = null;
 		}
 	}
 
@@ -104,7 +104,7 @@ final class UserTopic extends AbstractTopic {
 	void clear() {
 		postList.clear();
 		indexPerPostId.clear();
-		post(dummyPost);
+		post(UserTopic.dummyPost);
 	}
 
 	/**

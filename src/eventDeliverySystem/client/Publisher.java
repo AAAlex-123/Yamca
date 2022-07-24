@@ -36,9 +36,9 @@ final class Publisher extends ClientNode {
 	/**
 	 * Constructs a Publisher.
 	 *
-	 * @param defaultServerIP   the IP of the default broker, interpreted as
+	 * @param serverIP   the IP of the default broker, interpreted as
 	 *                          {@link InetAddress#getByName(String)}.
-	 * @param defaultServerPort the port of the default broker
+	 * @param serverPort the port of the default broker
 	 * @param userStub          the UserStub object that will be notified if a push
 	 *                          fails
 	 *
@@ -46,36 +46,23 @@ final class Publisher extends ClientNode {
 	 *                              if a scope_id was specified for a global IPv6
 	 *                              address while resolving the defaultServerIP.
 	 */
-	Publisher(String defaultServerIP, int defaultServerPort, UserStub userStub)
-	        throws UnknownHostException {
-		this(InetAddress.getByName(defaultServerIP), defaultServerPort, userStub);
+	Publisher(String serverIP, int serverPort, UserStub userStub) throws UnknownHostException {
+		super(serverIP, serverPort, userStub);
 	}
 
 	/**
 	 * Constructs a Publisher.
 	 *
-	 * @param defaultServerIP   the IP of the default broker, interpreted as
+	 * @param serverIP   the IP of the default broker, interpreted as
 	 *                          {@link InetAddress#getByAddress(byte[])}.
-	 * @param defaultServerPort the port of the default broker
+	 * @param serverPort the port of the default broker
 	 * @param userStub          the UserStub object that will be notified if a push
 	 *                          fails
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
 	 */
-	Publisher(byte[] defaultServerIP, int defaultServerPort, UserStub userStub)
-	        throws UnknownHostException {
-		this(InetAddress.getByAddress(defaultServerIP), defaultServerPort, userStub);
-	}
-
-	/**
-	 * Constructs a Publisher.
-	 *
-	 * @param ip       the InetAddress of the default broker
-	 * @param port     the port of the default broker
-	 * @param userStub the UserStub object that will be notified if a push fails
-	 */
-	private Publisher(InetAddress ip, int port, UserStub userStub) {
-		super(ip, port, userStub);
+	Publisher(byte[] serverIP, int serverPort, UserStub userStub) throws UnknownHostException {
+		super(serverIP, serverPort, userStub);
 	}
 
 	/**
@@ -139,14 +126,14 @@ final class Publisher extends ClientNode {
 					throw new ServerException(ClientNode.getTopicDNEString(topicName));
 
 				final PostInfo postInfo = post.getPostInfo();
-				final List<PostInfo> postInfos = new LinkedList<>();
-				final Map<Long, Packet[]> packets = new HashMap<>();
+				final List<PostInfo> postInfoList = new LinkedList<>();
+				postInfoList.add(postInfo);
 
-				postInfos.add(postInfo);
-				packets.put(postInfo.getId(), Packet.fromPost(post));
+				final Map<Long, Packet[]> packetMap = new HashMap<>();
+				packetMap.put(postInfo.getId(), Packet.fromPost(post));
 
 				final Thread pushThread = new eventDeliverySystem.thread.PushThread(oos, topicName,
-						postInfos, packets, Protocol.NORMAL, (callbackSuccess, callbackTopicName,
+						postInfoList, packetMap, Protocol.NORMAL, (callbackSuccess, callbackTopicName,
 															  callbackCause) -> {
 					if (!callbackSuccess) {
 						Exception e = new ServerException(ClientNode.CONNECTION_TO_SERVER_LOST_STRING,
