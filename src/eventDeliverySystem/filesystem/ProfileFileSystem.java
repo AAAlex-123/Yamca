@@ -1,5 +1,6 @@
 package eventDeliverySystem.filesystem;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,7 +15,8 @@ import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Post;
 
 /**
- * Manages Profiles that are saved in directories in the machine's file system.
+ * An implementation of the {@code IProfileDAO} interface which saves Profiles in directories in the
+ * machine's file system.
  *
  * @author Alex Mandelias
  */
@@ -23,7 +25,8 @@ public final class ProfileFileSystem implements IProfileDAO {
 	private final Path                         profilesRootDirectory;
 	private final Map<String, TopicFileSystem> topicFileSystemMap = new HashMap<>();
 
-	private String currentProfileName;
+	// don't change directly, only through 'changeProfile(String)'
+	private String currentProfileName = null;
 
 	/**
 	 * Creates a new Profile File System for the specified root directory.
@@ -36,7 +39,9 @@ public final class ProfileFileSystem implements IProfileDAO {
 	public ProfileFileSystem(Path profilesRootDirectory) throws FileSystemException {
 		if (!Files.exists(profilesRootDirectory)) {
 			throw new FileSystemException(
-					profilesRootDirectory, new IOException("Directory does not exist"));
+					"Root directory for Users does not exist",
+					new FileNotFoundException("Directory " + profilesRootDirectory + " does not exist"),
+					profilesRootDirectory);
 		}
 
 		this.profilesRootDirectory = profilesRootDirectory;
@@ -46,28 +51,10 @@ public final class ProfileFileSystem implements IProfileDAO {
 				final Path topicDirectory = getTopicsDirectory(profileName);
 				final TopicFileSystem tfs = new TopicFileSystem(topicDirectory);
 				topicFileSystemMap.put(profileName, tfs);
-			} catch (FileSystemException e) {
-				// cannot be thrown since the path is taken from running 'ls'
-				throw new RuntimeException("This should never happen");
+			} catch (FileSystemException ignore) {
+				// cannot be thrown since the path is, essentially, taken from running 'ls'
 			}
 		});
-	}
-
-	/**
-	 * Returns the all the Profile names found in the root directory.
-	 *
-	 * @return a collection of all the Profile names found
-	 *
-	 * @throws FileSystemException if an I/O error occurs while interacting with the
-	 *                             file system
-	 */
-	private Stream<String> getProfileNames() throws FileSystemException {
-		try {
-			return Files.list(profilesRootDirectory).filter(Files::isDirectory)
-		        .map(path -> path.getFileName().toString());
-		} catch (IOException e) {
-			throw new FileSystemException(profilesRootDirectory, e);
-		}
 	}
 
 	@Override
@@ -76,7 +63,7 @@ public final class ProfileFileSystem implements IProfileDAO {
 		try {
 			Files.createDirectory(topicsDirectory);
 		} catch (IOException e) {
-			throw new FileSystemException(topicsDirectory, e);
+			throw new FileSystemException("An I/O error occurred when creating Profile " + profileName, e, topicsDirectory);
 		}
 
 		topicFileSystemMap.put(profileName, new TopicFileSystem(topicsDirectory));
@@ -88,25 +75,34 @@ public final class ProfileFileSystem implements IProfileDAO {
 	public Collection<AbstractTopic> loadProfile(String profileName) throws FileSystemException {
 		changeProfile(profileName);
 
-		return getTopicFileSystemForCurrentUser().readAllTopics();
+		return getTopicFileSystemForCurrentProfile().readAllTopics();
 	}
 
 	@Override
-	public void createTopic(String topicName) throws FileSystemException {
-		getTopicFileSystemForCurrentUser().createTopic(topicName);
+	public void createTopicForCurrentProfile(String topicName) throws FileSystemException {
+		getTopicFileSystemForCurrentProfile().createTopic(topicName);
 	}
 
 	@Override
-	public void deleteTopic(String topicName) throws FileSystemException {
-		getTopicFileSystemForCurrentUser().deleteTopic(topicName);
+	public void deleteTopicFromCurrentProfile(String topicName) throws FileSystemException {
+		getTopicFileSystemForCurrentProfile().deleteTopic(topicName);
 	}
 
 	@Override
-	public void savePost(Post post, String topicName) throws FileSystemException {
-		getTopicFileSystemForCurrentUser().writePost(post, topicName);
+	public void savePostForCurrentProfile(Post post, String topicName) throws FileSystemException {
+		getTopicFileSystemForCurrentProfile().writePost(post, topicName);
 	}
 
 	// ==================== PRIVATE METHODS ====================
+
+	private Stream<String> getProfileNames() throws FileSystemException {
+		try {
+			return Files.list(profilesRootDirectory).filter(Files::isDirectory)
+						.map(path -> path.getFileName().toString());
+		} catch (IOException e) {
+			throw new FileSystemException("An I/O error occurred when retrieving the Profiles", e, profilesRootDirectory);
+		}
+	}
 
 	private void changeProfile(String profileName) throws NoSuchElementException {
 		if (!topicFileSystemMap.containsKey(profileName))
@@ -115,7 +111,7 @@ public final class ProfileFileSystem implements IProfileDAO {
 		currentProfileName = profileName;
 	}
 
-	private TopicFileSystem getTopicFileSystemForCurrentUser() {
+	private TopicFileSystem getTopicFileSystemForCurrentProfile() {
 		return topicFileSystemMap.get(currentProfileName);
 	}
 

@@ -121,6 +121,7 @@ public final class User {
 	 *
 	 * @throws ServerException     if the connection to the server could not be established
 	 * @throws IOException if an I/O error occurs while interacting with the IProfileDAO object
+	 * @throws NoSuchElementException if no Profile with that name exists
 	 */
 	public void switchToExistingProfile(String profileName) throws IOException {
 		currentProfile = new Profile(profileName);
@@ -206,7 +207,7 @@ public final class User {
 
 		for (final Post post : newPosts) {
 			LG.sout("Saving Post '%s'", post);
-			profileDao.savePost(post, topicName);
+			profileDao.savePostForCurrentProfile(post, topicName);
 		}
 
 		LG.out();
@@ -436,7 +437,7 @@ public final class User {
 			if (e.success) {
 				currentProfile.addTopic(e.topicName);
 				try {
-					profileDao.createTopic(e.topicName);
+					profileDao.createTopicForCurrentProfile(e.topicName);
 				} catch (IOException e1) {
 					User.this.userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
 				}
@@ -466,7 +467,7 @@ public final class User {
 		private void removeTopicLocally(UserEvent e) {
 			currentProfile.removeTopic(e.topicName);
 			try {
-				profileDao.deleteTopic(e.topicName);
+				profileDao.deleteTopicFromCurrentProfile(e.topicName);
 			} catch (IOException e1) {
 				User.this.userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
 			}

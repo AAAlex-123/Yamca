@@ -11,12 +11,13 @@ import java.nio.file.Path;
 public class FileSystemException extends IOException {
 
 	/**
-	 * Constructs a FileSystemException which is caused by an IOException.
+	 * Constructs a FileSystemException with the specified detail message, cause and path.
 	 *
+	 * @param message the detail message
+	 * @param cause the underlying cause
 	 * @param path  the path related to the Exception
-	 * @param cause the underlying IOException
 	 */
-	FileSystemException(Path path, IOException cause) {
-		super("Error while interacting with path: " + path, cause);
+	FileSystemException(String message, IOException cause, Path path) {
+		super(message + ": " + path, cause);
 	}
 }

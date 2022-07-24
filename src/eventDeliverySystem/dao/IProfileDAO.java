@@ -1,5 +1,6 @@
 package eventDeliverySystem.dao;
 
+import java.util.NoSuchElementException;
 import java.io.IOException;
 import java.util.Collection;
 
@@ -27,11 +28,12 @@ public interface IProfileDAO {
      * Loads all Topics for a Profile from this DAO. After this method returns, this DAO shall
      * henceforth operate on that new Profile.
      *
-     * @param profileName the id of the Profile to read
+     * @param profileName the name of the Profile to read
      *
      * @return a Collection including all the Topics loaded from this DAO
      *
      * @throws IOException if an I/O error occurs while loading the Topics of the Profile
+     * @throws NoSuchElementException if no Profile with that name exists
      */
     Collection<AbstractTopic> loadProfile(String profileName) throws IOException;
 
@@ -42,7 +44,7 @@ public interface IProfileDAO {
      *
      * @throws IOException if an I/O error occurs while creating the new Topic
      */
-    void createTopic(String topicName) throws IOException;
+    void createTopicForCurrentProfile(String topicName) throws IOException;
 
     /**
      * Deletes an existing Topic from the current Profile.
@@ -51,7 +53,7 @@ public interface IProfileDAO {
      *
      * @throws IOException if an I/O error occurs while deleting the Topic
      */
-    void deleteTopic(String topicName) throws IOException;
+    void deleteTopicFromCurrentProfile(String topicName) throws IOException;
 
     /**
      * Saves a Post in this DAO for the current Profile.
@@ -61,5 +63,5 @@ public interface IProfileDAO {
      *
      * @throws IOException if an I/O error occurs while saving the Post
      */
-    void savePost(Post post, String topicName) throws IOException;
+    void savePostForCurrentProfile(Post post, String topicName) throws IOException;
 }
