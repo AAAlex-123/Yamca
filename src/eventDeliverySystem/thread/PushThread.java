@@ -2,6 +2,7 @@ package eventDeliverySystem.thread;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -32,8 +33,8 @@ public final class PushThread extends Thread {
 
 	private final ObjectOutputStream  oos;
 	private final String              topicName;
-	private final List<PostInfo>      postInfos;
-	private final Map<Long, Packet[]> packets;
+	private final List<PostInfo>      postInfoList;
+	private final Map<Long, Packet[]> packetMap;
 	private final Protocol            protocol;
 	private final Callback            callback;
 
@@ -41,16 +42,16 @@ public final class PushThread extends Thread {
 	 * Constructs the Thread that writes some Posts to a stream.
 	 *
 	 * @param stream    the output stream to which to write the Posts
-	 * @param postInfos the PostInfo objects to write to the stream
-	 * @param packets   the array of Packets to write for each PostInfo object
+	 * @param postInfoList the PostInfo objects to write to the stream
+	 * @param packetMap   the array of Packets to write for each PostInfo object
 	 * @param protocol  the protocol to use when pushing, which alters the behaviour of the Pull
 	 *                  Thread
 	 *
 	 * @see Protocol
 	 */
-	public PushThread(ObjectOutputStream stream, List<PostInfo> postInfos,
-	        Map<Long, Packet[]> packets, Protocol protocol) {
-		this(stream, null, postInfos, packets, protocol, null);
+	public PushThread(ObjectOutputStream stream, List<PostInfo> postInfoList,
+					  Map<Long, Packet[]> packetMap, Protocol protocol) {
+		this(stream, null, postInfoList, packetMap, protocol, null);
 	}
 
 	/**
@@ -58,8 +59,8 @@ public final class PushThread extends Thread {
 	 *
 	 * @param stream    the output stream to which to write the Posts
 	 * @param topicName the name of the Topic that corresponds to the stream
-	 * @param postInfos the PostInfo objects to write to the stream
-	 * @param packets   the array of Packets to write for each PostInfo object
+	 * @param postInfoList the PostInfo objects to write to the stream
+	 * @param packetMap   the array of Packets to write for each PostInfo object
 	 * @param protocol  the protocol to use when pushing, which alters the behaviour
 	 *                  of the Pull Thread
 	 * @param callback  the callback to call right before finishing execution
@@ -69,17 +70,17 @@ public final class PushThread extends Thread {
 	 * @see Protocol
 	 * @see Callback
 	 */
-	public PushThread(ObjectOutputStream stream, String topicName, List<PostInfo> postInfos,
-	        Map<Long, Packet[]> packets, Protocol protocol, Callback callback) {
-		super("PushThread-" + postInfos.size() + "-" + protocol);
+	public PushThread(ObjectOutputStream stream, String topicName, List<PostInfo> postInfoList,
+					  Map<Long, Packet[]> packetMap, Protocol protocol, Callback callback) {
+		super("PushThread-" + postInfoList.size() + '-' + protocol);
 
 		if (callback != null && topicName == null)
 			throw new NullPointerException("topicName can't be null if a callback is provided");
 
 		oos = stream;
 		this.topicName = topicName;
-		this.postInfos = postInfos;
-		this.packets = packets;
+		this.postInfoList = Collections.unmodifiableList(postInfoList);
+		this.packetMap = Collections.unmodifiableMap(packetMap);
 		this.protocol = protocol;
 		this.callback = callback;
 	}
@@ -91,20 +92,20 @@ public final class PushThread extends Thread {
 
 		try {
 
-			LG.sout("protocol=%s, posts.size()=%d", protocol, postInfos.size());
+			LG.sout("protocol=%s, posts.size()=%d", protocol, postInfoList.size());
 			LG.in();
 
 			final int postCount = protocol == Protocol.NORMAL
-					? postInfos.size()
+					? postInfoList.size()
 					: Integer.MAX_VALUE;
 
 			oos.writeInt(postCount);
 
-			for (final PostInfo postInfo : postInfos) {
+			for (final PostInfo postInfo : postInfoList) {
 				LG.sout("postInfo=%s", postInfo);
 				oos.writeObject(postInfo);
 
-				final Packet[] packetArray = packets.get(postInfo.getId());
+				final Packet[] packetArray = packetMap.get(postInfo.getId());
 				for (final Packet packet : packetArray)
 					oos.writeObject(packet);
 			}
