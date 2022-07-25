@@ -183,7 +183,6 @@ public final class Broker implements Runnable, AutoCloseable {
 				final Message message = (Message) ois.readObject();
 
 				final String start = "%s '%s'";
-				final String end = "/%s '%s'";
 				final String topicName;
 
 				switch (message.getType()) {
@@ -286,6 +285,7 @@ public final class Broker implements Runnable, AutoCloseable {
 				}
 
 				LG.out();
+				final String end = "/%s '%s'";
 				LG.sout(end, message.getType(), topicName);
 
 			} catch (final IOException | ClassNotFoundException e) {

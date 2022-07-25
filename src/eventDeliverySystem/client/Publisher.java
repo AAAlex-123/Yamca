@@ -17,7 +17,6 @@ import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.server.Broker;
-import eventDeliverySystem.server.ServerException;
 import eventDeliverySystem.thread.PushThread.Protocol;
 import eventDeliverySystem.client.UserEvent.Tag;
 import eventDeliverySystem.util.LG;
@@ -119,8 +118,8 @@ final class Publisher extends ClientNode {
 		}
 
 		@Override
-		protected void doWork(boolean success, Socket socket, ObjectOutputStream oos,
-							  ObjectInputStream ois) throws IOException {
+		protected void doWorkAndMaybeCloseSocket(boolean success, Socket socket, ObjectOutputStream oos,
+												 ObjectInputStream ois) throws IOException {
 			try {
 				if (!success)
 					throw new ServerException(ClientNode.getTopicDNEString(topicName));
@@ -157,8 +156,8 @@ final class Publisher extends ClientNode {
 		}
 
 		@Override
-		protected void doWork(boolean success, Socket socket, ObjectOutputStream oos,
-							  ObjectInputStream ois) throws IOException {
+		protected void doWorkAndMaybeCloseSocket(boolean success, Socket socket, ObjectOutputStream oos,
+												 ObjectInputStream ois) throws IOException {
 			try {
 				if (!success)
 					throw new ServerException(ClientNode.getTopicAEString(topicName));
@@ -175,8 +174,8 @@ final class Publisher extends ClientNode {
 		}
 
 		@Override
-		protected void doWork(boolean success, Socket socket, ObjectOutputStream oos,
-							  ObjectInputStream ois) throws IOException {
+		protected void doWorkAndMaybeCloseSocket(boolean success, Socket socket, ObjectOutputStream oos,
+												 ObjectInputStream ois) throws IOException {
 			try {
 				if (!success)
 					throw new ServerException(ClientNode.getTopicDNEString(topicName));

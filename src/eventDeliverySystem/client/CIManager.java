@@ -12,7 +12,6 @@ import java.util.Map;
 
 import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
-import eventDeliverySystem.server.ServerException;
 
 /**
  * Wrapper for a cache that communicates with the default Broker to obtain and store the

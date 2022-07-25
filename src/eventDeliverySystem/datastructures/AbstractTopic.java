@@ -81,7 +81,7 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	 * @return the most recent Post's ID or {@link AbstractTopic#FETCH_ALL_POSTS} if
 	 *         there are no Posts in this Topic
 	 */
-	public abstract long getLastPostId();
+	protected abstract long getLastPostId();
 
 	/**
 	 * Adds a Subscriber to this Topic.
@@ -245,6 +245,7 @@ public abstract class AbstractTopic implements Iterable<Post> {
 
 		@Override
 		public int hashCode() {
+			// hash only by name, like superclass
 			return super.hashCode();
 		}
 

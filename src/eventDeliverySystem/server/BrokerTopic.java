@@ -149,6 +149,7 @@ final class BrokerTopic extends AbstractTopic {
 
 	@Override
 	public int hashCode() {
+		// hash only by name, like superclass
 		return super.hashCode();
 	}
 

@@ -11,7 +11,6 @@ import java.util.Set;
 import eventDeliverySystem.dao.IProfileDAO;
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Post;
-import eventDeliverySystem.server.ServerException;
 import eventDeliverySystem.client.UserEvent.Tag;
 import eventDeliverySystem.util.LG;
 
@@ -333,65 +332,65 @@ public final class User {
 		}
 	}
 
-	private static class CompositeListener implements UserListener {
+	private static final class CompositeListener implements UserListener {
 
 		private final Set<UserListener> listeners = new HashSet<>();
 
-		void addListener(UserListener l) {
+		final void addListener(UserListener l) {
 			listeners.add(l);
 		}
 
 		@Override
-		public void onMessageSent(UserEvent e) {
+		public final void onMessageSent(UserEvent e) {
 			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onMessageSent(e));
 		}
 
 		@Override
-		public void onMessageReceived(UserEvent e) {
+		public final void onMessageReceived(UserEvent e) {
 			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onMessageReceived(e));
 		}
 
 		@Override
-		public void onTopicCreated(UserEvent e) {
+		public final void onTopicCreated(UserEvent e) {
 			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onTopicCreated(e));
 		}
 
 		@Override
-		public void onTopicDeleted(UserEvent e) {
+		public final void onTopicDeleted(UserEvent e) {
 			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onTopicDeleted(e));
 		}
 
 		@Override
-		public void onServerTopicDeleted(UserEvent e) {
+		public final void onServerTopicDeleted(UserEvent e) {
 			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onServerTopicDeleted(e));
 		}
 
 		@Override
-		public void onTopicListened(UserEvent e) {
+		public final void onTopicListened(UserEvent e) {
 			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onTopicListened(e));
 		}
 
 		@Override
-		public void onTopicLoaded(UserEvent e) {
+		public final void onTopicLoaded(UserEvent e) {
 			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onTopicLoaded(e));
 		}
 
 		@Override
-		public void onTopicListenStopped(UserEvent e) {
+		public final void onTopicListenStopped(UserEvent e) {
 			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onTopicListenStopped(e));

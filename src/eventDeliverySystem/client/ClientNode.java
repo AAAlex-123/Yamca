@@ -3,7 +3,6 @@ package eventDeliverySystem.client;
 import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.datastructures.Message.MessageType;
-import eventDeliverySystem.server.ServerException;
 import eventDeliverySystem.client.User.UserStub;
 import eventDeliverySystem.client.UserEvent.Tag;
 import eventDeliverySystem.util.LG;
@@ -121,7 +120,7 @@ abstract class ClientNode {
 	 * @author Alex Mandelias
 	 *
 	 * @see #run()
-	 * @see #doWork(boolean, Socket, ObjectOutputStream, ObjectInputStream)
+	 * @see #doWorkAndMaybeCloseSocket(boolean, Socket, ObjectOutputStream, ObjectInputStream)
 	 * @see #getMessageValue()
 	 */
 	protected abstract class ClientThread extends Thread {
@@ -190,7 +189,7 @@ abstract class ClientNode {
 
 				boolean success = ois.readBoolean();
 
-				doWork(success, socket, oos, ois);
+				doWorkAndMaybeCloseSocket(success, socket, oos, ois);
 
 				userStub.fireEvent(UserEvent.successful(eventTag, topicName));
 
@@ -207,7 +206,7 @@ abstract class ClientNode {
 		/**
 		 * Allows clients to perform specific work after the initial communication with the Broker.
 		 * See the {@code run} method's documentation for an exact description of when and how this
-		 * method is called.
+		 * method is called. This method is also responsible for closing the provided connection.
 		 *
 		 * @param success the Broker's response, {@code true} if it was successful, {@code false}
 		 *                otherwise
@@ -223,8 +222,8 @@ abstract class ClientNode {
 		 *
 		 * @see #run()
 		 */
-		protected abstract void doWork(boolean success, Socket socket, ObjectOutputStream oos,
-									   ObjectInputStream ois) throws IOException;
+		protected abstract void doWorkAndMaybeCloseSocket(boolean success, Socket socket, ObjectOutputStream oos,
+														  ObjectInputStream ois) throws IOException;
 
 		/**
 		 * Allows clients to provide a different value for the message that is sent to the Broker.

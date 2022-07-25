@@ -8,7 +8,7 @@ import java.nio.file.Path;
  *
  * @author Alex Mandelias
  */
-public class FileSystemException extends IOException {
+public final class FileSystemException extends IOException {
 
 	/**
 	 * Constructs a FileSystemException with the specified detail message, cause and path.

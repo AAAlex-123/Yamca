@@ -22,7 +22,6 @@ import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
 import eventDeliverySystem.server.Broker;
-import eventDeliverySystem.server.ServerException;
 import eventDeliverySystem.thread.PullThread;
 import eventDeliverySystem.util.LG;
 import eventDeliverySystem.datastructures.Subscriber;
@@ -277,8 +276,8 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		}
 
 		@Override
-		protected void doWork(boolean success, Socket socket, ObjectOutputStream oos,
-							  ObjectInputStream ois) throws IOException {
+		protected void doWorkAndMaybeCloseSocket(boolean success, Socket socket, ObjectOutputStream oos,
+												 ObjectInputStream ois) throws IOException {
 
 			if (!success) {
 				socket.close();
@@ -317,8 +316,8 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		}
 
 		@Override
-		protected void doWork(boolean success, Socket socket, ObjectOutputStream oos,
-							  ObjectInputStream ois) throws IOException {
+		protected void doWorkAndMaybeCloseSocket(boolean success, Socket socket, ObjectOutputStream oos,
+												 ObjectInputStream ois) throws IOException {
 			if (!success) {
 				socket.close();
 				throw new ServerException(ClientNode.getTopicDNEString(topicName));

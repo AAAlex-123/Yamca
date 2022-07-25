@@ -20,7 +20,7 @@ import eventDeliverySystem.util.LG;
  *
  * @author Dimitris Tsirmpas
  */
-public final class Server {
+final class Server {
 
 	private static final String LINE_SEP = System.lineSeparator();
 	private static final int MAX_PORT_NUMBER = 65_535;

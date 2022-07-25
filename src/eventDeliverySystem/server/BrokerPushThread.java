@@ -26,7 +26,7 @@ final class BrokerPushThread extends Thread implements Subscriber {
 	private static final long NO_CURRENT_POST_ID = -1L;
 
 	private long                          currentPostId = BrokerPushThread.NO_CURRENT_POST_ID;
-	private final Deque<PostInfo>         postInfos = new LinkedList<>();
+	private final Deque<PostInfo> postInfoList = new LinkedList<>();
 	private final Map<Long, List<Packet>> buffers = new HashMap<>();
 
 	private final Queue<Object>      queue = new LinkedList<>();
@@ -103,7 +103,7 @@ final class BrokerPushThread extends Thread implements Subscriber {
 
 		} else {
 			// add this post to buffer
-			postInfos.addLast(postInfo);
+			postInfoList.addLast(postInfo);
 			buffers.put(postInfo.getId(), new LinkedList<>());
 		}
 
@@ -139,13 +139,13 @@ final class BrokerPushThread extends Thread implements Subscriber {
 
 					// if no posts left in buffer, mark current as none
 					// wait next post info
-					if (postInfos.isEmpty()) {
+					if (postInfoList.isEmpty()) {
 						currentPostId = BrokerPushThread.NO_CURRENT_POST_ID;
 						break;
 					}
 
 					// take next Post
-					final PostInfo curr = postInfos.removeFirst();
+					final PostInfo curr = postInfoList.removeFirst();
 
 					// start streaming post
 					queue.add(curr);

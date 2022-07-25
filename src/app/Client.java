@@ -17,7 +17,7 @@ import eventDeliverySystem.util.LG;
  *
  * @author Alex Mandelias
  */
-public final class Client {
+final class Client {
 
 	private static final String LINE_SEP = System.lineSeparator();
 	private static final int MAX_PORT_NUMBER = 65_535;
@@ -74,7 +74,6 @@ public final class Client {
 
 		final String ip;
 		final String stringPort;
-		final int port;
 
 		if ("-f".equals(args[ARG_F_FLAG])) {
 			Properties props = new Properties();
@@ -97,6 +96,7 @@ public final class Client {
 			stringPort = args[ARG_PORT];
 		}
 
+		final int port;
 		try {
 			port = Integer.parseInt(stringPort);
 			if (port <= 0 || port > Client.MAX_PORT_NUMBER)
@@ -126,7 +126,7 @@ public final class Client {
 			ui = new CrappyUserUI(existing, name, ip, port, profileDao);
 		} catch (final IOException e) {
 			LG.err("There was an I/O error either while interacting with the file system or"
-				   + "connecting to the server");
+				   + " connecting to the server");
 			e.printStackTrace();
 			return;
 		}

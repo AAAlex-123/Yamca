@@ -18,7 +18,6 @@ public final class LG {
 
 	private LG() {}
 
-
 	/**
 	 * Prints {@code String.format(format + "\n", args)} to {@code System.out}
 	 * ignoring the current indentation level

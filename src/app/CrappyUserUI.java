@@ -66,7 +66,7 @@ final class CrappyUserUI extends JFrame {
 		this.pack();
 	}
 
-	private class MyUserAdapter extends UserAdapter {
+	private final class MyUserAdapter extends UserAdapter {
 		@Override
 		public void onMessageReceived(UserEvent e) {
 			if (e.success)
