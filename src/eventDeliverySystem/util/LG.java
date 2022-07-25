@@ -13,18 +13,28 @@ public final class LG {
 
 	private static final PrintStream out = System.out;
 	private static final PrintStream err = System.err;
+
 	private static int tab = 0;
 
 	private LG() {}
 
+
+	/**
+	 * Prints {@code String.format(format + "\n", args)} to {@code System.out}
+	 * ignoring the current indentation level
+	 *
+	 * @param format A format string
+	 * @param args   Arguments referenced by the format specifiers in the format
+	 *               string.
+	 */
 	public static void header(String format, Object... args) {
 		out.printf(String.format("%s%n", format), args);
 		out.flush();
 	}
 
 	/**
-	 * Prints {@code String.format(format + "\n", args)} according to the current
-	 * indentation level
+	 * Prints {@code String.format(format + "\n", args)} to {@code System.out}
+	 * according to the current indentation level
 	 *
 	 * @param format A format string
 	 * @param args   Arguments referenced by the format specifiers in the format
@@ -38,6 +48,14 @@ public final class LG {
 		out.flush();
 	}
 
+	/**
+	 * Prints {@code String.format("ERROR: " + format + "\n", args)} to {@code System.err}
+	 * ignoring the current indentation level
+	 *
+	 * @param format A format string
+	 * @param args   Arguments referenced by the format specifiers in the format
+	 *               string.
+	 */
 	public static void err(String format, Object... args) {
 		err.printf(String.format("ERROR: %s%n", format), args);
 		err.flush();
