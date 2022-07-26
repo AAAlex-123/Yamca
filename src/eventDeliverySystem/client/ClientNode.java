@@ -1,12 +1,5 @@
 package eventDeliverySystem.client;
 
-import eventDeliverySystem.datastructures.ConnectionInfo;
-import eventDeliverySystem.datastructures.Message;
-import eventDeliverySystem.datastructures.Message.MessageType;
-import eventDeliverySystem.client.User.UserStub;
-import eventDeliverySystem.client.UserEvent.Tag;
-import eventDeliverySystem.util.LG;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -15,14 +8,19 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import eventDeliverySystem.client.User.UserStub;
+import eventDeliverySystem.client.UserEvent.Tag;
+import eventDeliverySystem.datastructures.ConnectionInfo;
+import eventDeliverySystem.datastructures.Message;
+import eventDeliverySystem.datastructures.Message.MessageType;
 import eventDeliverySystem.server.Broker;
+import eventDeliverySystem.util.LG;
 
 /**
  * A superclass for all client-side Nodes that connect to and send / receive data from a server.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
- *
  * @see Broker
  */
 abstract class ClientNode {
@@ -53,8 +51,8 @@ abstract class ClientNode {
 	}
 
 	/**
-	 * This Client Node's Connection Info Manager that manages the information about
-	 * this Node's connections to brokers.
+	 * This Client Node's Connection Info Manager that manages the information about this Node's
+	 * connections to brokers.
 	 *
 	 * @see CIManager
 	 */
@@ -70,42 +68,40 @@ abstract class ClientNode {
 	/**
 	 * Constructs a Client Node that will connect to a specific default broker.
 	 *
-	 * @param serverIP   the IP of the default broker, interpreted by
-	 *                   {@link InetAddress#getByName(String)}.
+	 * @param serverIP the IP of the default broker, interpreted by {@link
+	 *        InetAddress#getByName(String)}.
 	 * @param serverPort the port of the default broker
-	 * @param userStub   the UserSub object that will be notified when data arrives
+	 * @param userStub the UserSub object that will be notified when data arrives
 	 *
-	 *
-	 * @throws UnknownHostException if no IP address for the host could be found, or
-	 *                              if a scope_id was specified for a global IPv6
-	 *                              address while resolving the defaultServerIP.
+	 * @throws UnknownHostException if no IP address for the host could be found, or if a scope_id
+	 * 		was specified for a global IPv6 address while resolving the defaultServerIP.
 	 */
-	protected ClientNode(String serverIP, int serverPort, UserStub userStub) throws UnknownHostException {
+	protected ClientNode(String serverIP, int serverPort, UserStub userStub)
+			throws UnknownHostException {
 		this(InetAddress.getByName(serverIP), serverPort, userStub);
 	}
 
 	/**
 	 * Constructs a Client Node that will connect to a specific default broker.
 	 *
-	 * @param serverIP   the IP of the default broker, interpreted by
-	 *                   {@link InetAddress#getByAddress(byte[])}.
+	 * @param serverIP the IP of the default broker, interpreted by {@link
+	 *        InetAddress#getByAddress(byte[])}.
 	 * @param serverPort the port of the default broker
-	 * @param userStub   the UserSub object that will be notified when data arrives
-	 *
+	 * @param userStub the UserSub object that will be notified when data arrives
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
 	 */
-	protected ClientNode(byte[] serverIP, int serverPort, UserStub userStub) throws UnknownHostException {
+	protected ClientNode(byte[] serverIP, int serverPort, UserStub userStub)
+			throws UnknownHostException {
 		this(InetAddress.getByAddress(serverIP), serverPort, userStub);
 	}
 
 	/**
 	 * Constructs a Client Node that will connect to a specific default broker.
 	 *
-	 * @param ip   the InetAddress of the default broker
+	 * @param ip the InetAddress of the default broker
 	 * @param port the port of the default broker
-	 * @param userStub   the UserSub object that will be notified when data arrives
-	 *
+	 * @param userStub the UserSub object that will be notified when data arrives
 	 */
 	protected ClientNode(InetAddress ip, int port, UserStub userStub) {
 		topicCIManager = new CIManager(ip, port);
@@ -118,7 +114,6 @@ abstract class ClientNode {
 	 * two protected methods of this class.
 	 *
 	 * @author Alex Mandelias
-	 *
 	 * @see #run()
 	 * @see #doWorkAndMaybeCloseSocket(boolean, Socket, ObjectOutputStream, ObjectInputStream)
 	 * @see #getMessageValue()
@@ -153,9 +148,9 @@ abstract class ClientNode {
 		/**
 		 * Templated {@code run} method for all Client Threads. This method does the following:
 		 * <ul>
-		 *     <li>Sets up a connection to the actual broker for the Topic with the given name.</li>
-		 *     <li>Sends a message with the given type to the server. The value is obtained from the
-		 *     {@code getMessageValue} method.</li>
+		 *     <li>Sets up a connection to the actual broker for the Topic with that name</li>
+		 *     <li>Sends a message with the given type to the server. The value is obtained from
+		 *     the {@code getMessageValue} method.</li>
 		 *     <li>Reads the server's response.</li>
 		 *     <li>Calls the {@code doWork} method passing the server's response to it.</li>
 		 *     <li>Fires a successful user event with the given tag. If an exception is thrown at
@@ -192,7 +187,6 @@ abstract class ClientNode {
 				doWorkAndMaybeCloseSocket(success, socket, oos, ois);
 
 				userStub.fireEvent(UserEvent.successful(eventTag, topicName));
-
 			} catch (ServerException e) {
 				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
 			} catch (final IOException e) {
@@ -209,21 +203,20 @@ abstract class ClientNode {
 		 * method is called. This method is also responsible for closing the provided connection.
 		 *
 		 * @param success the Broker's response, {@code true} if it was successful, {@code false}
-		 *                otherwise
-		 * @param socket  the connection that was established with the Broker
-		 * @param oos     the opened output stream of the connection which can be used to send
-		 *                further data
-		 * @param ois     the opened input stream of the connection which can be used to receive
-		 *                further data
+		 * 		otherwise
+		 * @param socket the connection that was established with the Broker
+		 * @param oos the opened output stream of the connection which can be used to send further
+		 * 		data
+		 * @param ois the opened input stream of the connection which can be used to receive
+		 * 		further data
 		 *
 		 * @throws IOException if an I/O Error occurs while doing client-specific work. Such IO
-		 * 					   exceptions should be left uncaught by this method as the ClientThread
-		 * 					   is responsible for catching them
-		 *
+		 * 		exceptions should be left uncaught by this method as the ClientThread is responsible
+		 * 		for catching them
 		 * @see #run()
 		 */
-		protected abstract void doWorkAndMaybeCloseSocket(boolean success, Socket socket, ObjectOutputStream oos,
-														  ObjectInputStream ois) throws IOException;
+		protected abstract void doWorkAndMaybeCloseSocket(boolean success, Socket socket,
+				ObjectOutputStream oos, ObjectInputStream ois) throws IOException;
 
 		/**
 		 * Allows clients to provide a different value for the message that is sent to the Broker.

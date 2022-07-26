@@ -6,8 +6,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 /**
- * An immutable pair of <IPAddress, Port> representing a unique connection in
- * the web.
+ * An immutable pair of <IPAddress, Port> representing a unique connection in the web.
  *
  * @author Dimitris Tsirmpas
  */
@@ -16,7 +15,7 @@ public final class ConnectionInfo implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private final InetAddress address;
-	private final int         port;
+	private final int port;
 
 	/**
 	 * Creates a new ConnectionInfo representing the given Server Socket.

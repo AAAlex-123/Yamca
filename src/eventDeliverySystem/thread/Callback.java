@@ -10,13 +10,13 @@ package eventDeliverySystem.thread;
 @FunctionalInterface
 public interface Callback {
 
-    /**
-     * The code to call when the Push- or PullThread finishes executing.
-     *
-     * @param success   {@code true} if the Thread terminates successfully, {@code false} otherwise
-     * @param topicName the name of the Topic associated with the Thread
-     * @param cause     the Throwable that caused success to be {@code false}. If success is
-     *                  {@code true}, the cause may be {@code null}.
-     */
-    void onCompletion(boolean success, String topicName, Throwable cause);
+	/**
+	 * The code to call when the Push- or PullThread finishes executing.
+	 *
+	 * @param success {@code true} if the Thread terminates successfully, {@code false} otherwise
+	 * @param topicName the name of the Topic associated with the Thread
+	 * @param cause the Throwable that caused success to be {@code false}. If success is {@code
+	 * 		true}, the cause may be {@code null}.
+	 */
+	void onCompletion(boolean success, String topicName, Throwable cause);
 }

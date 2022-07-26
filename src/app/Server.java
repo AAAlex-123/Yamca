@@ -40,9 +40,11 @@ final class Server {
 	        + "Options:" + LINE_SEP
 	        + "\t-f\tread connection configuration from file" + LINE_SEP
 	        + "Where:" + LINE_SEP
-	        + "\t<broker_dir>\t\t the directory where the topics will be saved for this server" + LINE_SEP
+	        + "\t<broker_dir>\t\t the directory where the topics will be saved for this server"
+	                                    + LINE_SEP
 	        + "\t<ip>\t\tthe ip of the first server (run `ipconfig` on the first server)" + LINE_SEP
-	        + "\t<port>\t\tthe port the first server listens to (See 'Broker Port' in the first server's console)" + LINE_SEP
+	        + "\t<port>\t\tthe port the first server listens to (See 'Broker Port' in the first"
+	                                    + " server's console)" + LINE_SEP
 	        + "\t<path>\t\tthe file with the configuration";
 
 	private Server() {}
@@ -59,16 +61,16 @@ final class Server {
 		LG.args(args);
 
 		switch (args.length) {
-			case 1:
-			case 3:
-				break;
-			default:
-				LG.sout(Server.USAGE);
-				return;
+		case 1:
+		case 3:
+			break;
+		default:
+			LG.sout(Server.USAGE);
+			return;
 		}
 
 		final boolean leader = args.length == 1;
-		final Path    path = new File(args[ARG_BROKER_DIR]).getAbsoluteFile().toPath();
+		final Path path = new File(args[ARG_BROKER_DIR]).getAbsoluteFile().toPath();
 		final String ip;
 		final int port;
 
@@ -79,20 +81,19 @@ final class Server {
 			final String stringPort;
 			if ("-f".equals(args[ARG_FLAG])) {
 				Properties props = new Properties();
-				try (FileInputStream fis = new FileInputStream(args[ARG_PATH])){
+				try (FileInputStream fis = new FileInputStream(args[ARG_PATH])) {
 					props.load(fis);
 				} catch (FileNotFoundException e) {
 					LG.err("Could not find configuration file: %s", args[ARG_PATH]);
 					return;
 				} catch (IOException e) {
-					LG.err("Unexpected Error while reading configuration from file: %s. Please try "
-						   + "manually inputting ip and port.", args[ARG_PATH]);
+					LG.err("Unexpected Error while reading configuration from file: %s. Please "
+					       + "try manually inputting ip and port.", args[ARG_PATH]);
 					return;
 				}
 
 				ip = props.getProperty("ip");
 				stringPort = props.getProperty("port");
-
 			} else {
 				ip = args[ARG_IP];
 				stringPort = args[ARG_PORT];
@@ -100,12 +101,11 @@ final class Server {
 
 			try {
 				port = Integer.parseInt(stringPort);
-				if (port <= 0 || port > Server.MAX_PORT_NUMBER)
+				if (port <= 0 || port > Server.MAX_PORT_NUMBER) {
 					throw new IllegalArgumentException();
-
+				}
 			} catch (final NumberFormatException e) {
 				throw new IllegalArgumentException(e);
-
 			} catch (IllegalArgumentException e) {
 				LG.err("Invalid port number: %s", stringPort);
 				return;
@@ -127,23 +127,22 @@ final class Server {
 			brs = new ServerSocket();
 		} catch (IOException e) {
 			LG.err("Could not open server sockets");
-			if (crs != null)
+			if (crs != null) {
 				try {
 					crs.close();
 				} catch (IOException e1) {
 					LG.err("Error while closing the server sockets");
 					e1.printStackTrace();
 				}
+			}
 			return;
 		}
 
-		try (Broker broker = leader
-				? new Broker(postDao, crs, brs)
-				: new Broker(postDao, crs, brs, ip, port)) {
+		try (Broker broker = leader ? new Broker(postDao, crs, brs)
+		                            : new Broker(postDao, crs, brs, ip, port)) {
 
-			final String brokerId = leader
-					? "Leader"
-					: Integer.toString(ThreadLocalRandom.current().nextInt(1, 100));
+			final String brokerId = leader ? "Leader" : Integer.toString(
+					ThreadLocalRandom.current().nextInt(1, 100));
 
 			final Thread thread = new Thread(broker, "Broker-" + brokerId);
 			thread.start();

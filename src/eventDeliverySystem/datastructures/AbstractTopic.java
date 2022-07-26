@@ -36,13 +36,14 @@ public abstract class AbstractTopic implements Iterable<Post> {
 		AbstractTopic simple = new SimpleTopic(name);
 		posts.forEach(post -> {
 			simple.post(post.getPostInfo());
-			for (Packet packet : Packet.fromPost(post))
+			for (Packet packet : Packet.fromPost(post)) {
 				simple.post(packet);
+			}
 		});
 		return simple;
 	}
 
-	private final String          name;
+	private final String name;
 	private final Set<Subscriber> subscribers;
 
 	/**
@@ -78,8 +79,8 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	/**
 	 * Returns the ID of the most recent post in this Topic.
 	 *
-	 * @return the most recent Post's ID or {@link AbstractTopic#FETCH_ALL_POSTS} if
-	 *         there are no Posts in this Topic
+	 * @return the most recent Post's ID or {@link AbstractTopic#FETCH_ALL_POSTS} if there are no
+	 * 		Posts in this Topic
 	 */
 	protected abstract long getLastPostId();
 
@@ -97,8 +98,7 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	 *
 	 * @param sub the Subscriber to remove
 	 *
-	 * @return {@code true} if the Subscriber was subscribed to this Topic,
-	 *         {@code false} otherwise
+	 * @return {@code true} if the Subscriber was subscribed to this Topic, {@code false} otherwise
 	 */
 	public final boolean unsubscribe(Subscriber sub) {
 		return subscribers.remove(sub);
@@ -111,8 +111,9 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	 */
 	public final synchronized void post(PostInfo postInfo) {
 		postHook(postInfo);
-		for (final Subscriber sub : subscribers)
+		for (final Subscriber sub : subscribers) {
 			sub.notify(postInfo, name);
+		}
 	}
 
 	/**
@@ -122,13 +123,14 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	 */
 	public final synchronized void post(Packet packet) {
 		postHook(packet);
-		for (final Subscriber sub : subscribers)
+		for (final Subscriber sub : subscribers) {
 			sub.notify(packet, name);
+		}
 	}
 
 	/**
-	 * Allows each subclass to specify how the template method is implemented. This
-	 * method is effectively synchronized.
+	 * Allows each subclass to specify how the template method is implemented. This method is
+	 * effectively synchronized.
 	 *
 	 * @param postInfo the PostInfo
 	 *
@@ -137,8 +139,8 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	protected abstract void postHook(PostInfo postInfo);
 
 	/**
-	 * Allows each subclass to specify how the template method is implemented. This
-	 * method is effectively synchronized.
+	 * Allows each subclass to specify how the template method is implemented. This method is
+	 * effectively synchronized.
 	 *
 	 * @param packet the Packet
 	 *
@@ -147,10 +149,10 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	protected abstract void postHook(Packet packet);
 
 	/**
-	 * Returns the hash that a Topic with a given name would have. Since a Topic's
-	 * hash is determined solely by its name, this method returns the same result as
-	 * Topic#hashCode(), when given the name of the Topic, and can be used when an
-	 * instance of Topic is not available, but its name is known.
+	 * Returns the hash that a Topic with a given name would have. Since a Topic's hash is
+	 * determined solely by its name, this method returns the same result as Topic#hashCode(), when
+	 * given the name of the Topic, and can be used when an instance of Topic is not available, but
+	 * its name is known.
 	 *
 	 * @param topicName the name of the Topic for which to compute the hash
 	 *
@@ -159,20 +161,21 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	public static int hashForTopic(String topicName) {
 		try {
 			final MessageDigest a = MessageDigest.getInstance("md5");
-			final byte[]        b = a.digest(topicName.getBytes(StandardCharsets.UTF_8));
+			final byte[] b = a.digest(topicName.getBytes(StandardCharsets.UTF_8));
 
 			// big brain stuff
-			final int    FOUR = 4;
-			final int    c    = FOUR;
-			final int    d    = b.length / c;
-			final byte[] e    = new byte[c];
-			for (int f = 0; f < e.length; f++)
-				for (int g = 0; g < d; g++)
+			final int FOUR = 4;
+			final int c = FOUR;
+			final int d = b.length / c;
+			final byte[] e = new byte[c];
+			for (int f = 0; f < e.length; f++) {
+				for (int g = 0; g < d; g++) {
 					e[f] = (byte) (e[f] ^ (b[(d * f) + g]));
+				}
+			}
 
 			final BigInteger h = new BigInteger(e);
 			return h.intValueExact();
-
 		} catch (NoSuchAlgorithmException | ArithmeticException e) {
 			throw new RuntimeException(e);
 		}
@@ -190,12 +193,15 @@ public abstract class AbstractTopic implements Iterable<Post> {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (!(obj instanceof AbstractTopic))
+		}
+		if (!(obj instanceof AbstractTopic)) {
 			return false;
+		}
 		final AbstractTopic other = (AbstractTopic) obj;
-		return Objects.equals(name, other.name); // same name == same Topic, can't have duplicate names
+		return Objects.equals(name,
+				other.name); // same name == same Topic, can't have duplicate names
 	}
 
 	private static final class SimpleTopic extends AbstractTopic {
@@ -218,8 +224,9 @@ public abstract class AbstractTopic implements Iterable<Post> {
 
 		@Override
 		public void postHook(PostInfo postInfo) {
-			if (!currPackets.isEmpty())
+			if (!currPackets.isEmpty()) {
 				throw new IllegalStateException("Received PostInfo while more Packets remain");
+			}
 
 			currPI = postInfo;
 		}
@@ -229,9 +236,8 @@ public abstract class AbstractTopic implements Iterable<Post> {
 			currPackets.add(packet);
 
 			if (packet.isFinal()) {
-				final Packet[] data          = currPackets.toArray(
-						SimpleTopic.ZERO_LENGTH_PACKET_ARRAY);
-				final Post     completedPost = Post.fromPackets(data, currPI);
+				final Packet[] data = currPackets.toArray(SimpleTopic.ZERO_LENGTH_PACKET_ARRAY);
+				final Post completedPost = Post.fromPackets(data, currPI);
 				posts.add(completedPost);
 
 				currPackets.clear();
@@ -251,10 +257,12 @@ public abstract class AbstractTopic implements Iterable<Post> {
 
 		@Override
 		public boolean equals(Object obj) {
-			if (this == obj)
+			if (this == obj) {
 				return true;
-			if (!super.equals(obj))
+			}
+			if (!super.equals(obj)) {
 				return false;
+			}
 			return (obj instanceof SimpleTopic);
 		}
 	}
@@ -271,7 +279,7 @@ public abstract class AbstractTopic implements Iterable<Post> {
 		private static final long serialVersionUID = 1L;
 
 		private final String topicName;
-		private final long   lastId;
+		private final long lastId;
 
 		private TopicToken(AbstractTopic abstractTopic) {
 			topicName = abstractTopic.getName();

@@ -21,18 +21,17 @@ import eventDeliverySystem.datastructures.Message.MessageType;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.Post;
 import eventDeliverySystem.datastructures.PostInfo;
+import eventDeliverySystem.datastructures.Subscriber;
 import eventDeliverySystem.server.Broker;
 import eventDeliverySystem.thread.PullThread;
 import eventDeliverySystem.util.LG;
-import eventDeliverySystem.datastructures.Subscriber;
 
 /**
- * A client-side process which is responsible for listening for a set of Topics
- * and pulling Posts from them by connecting to a remote server.
+ * A client-side process which is responsible for listening for a set of Topics and pulling Posts
+ * from them by connecting to a remote server.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
- *
  * @see Broker
  */
 final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
@@ -42,14 +41,13 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	/**
 	 * Constructs a Consumer that will connect to a specific default broker.
 	 *
-	 * @param serverIP   the IP of the default broker, interpreted by
-	 *                   {@link InetAddress#getByName(String)}.
+	 * @param serverIP the IP of the default broker, interpreted by {@link
+	 *        InetAddress#getByName(String)}.
 	 * @param serverPort the port of the default broker
-	 * @param userStub   the UserSub object that will be notified when data arrives
+	 * @param userStub the UserSub object that will be notified when data arrives
 	 *
-	 * @throws UnknownHostException if no IP address for the host could be found, or
-	 *                              if a scope_id was specified for a global IPv6
-	 *                              address while resolving the defaultServerIP.
+	 * @throws UnknownHostException if no IP address for the host could be found, or if a scope_id
+	 * 		was specified for a global IPv6 address while resolving the defaultServerIP.
 	 */
 	Consumer(String serverIP, int serverPort, UserStub userStub) throws UnknownHostException {
 		super(serverIP, serverPort, userStub);
@@ -58,10 +56,10 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	/**
 	 * Constructs a Consumer that will connect to a specific default broker.
 	 *
-	 * @param serverIP   the IP of the default broker, interpreted by
-	 *                   {@link InetAddress#getByAddress(byte[])}.
+	 * @param serverIP the IP of the default broker, interpreted by {@link
+	 *        InetAddress#getByAddress(byte[])}.
 	 * @param serverPort the port of the default broker
-	 * @param userStub   the UserSub object that will be notified when data arrives
+	 * @param userStub the UserSub object that will be notified when data arrives
 	 *
 	 * @throws UnknownHostException if IP address is of illegal length
 	 */
@@ -75,19 +73,19 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	}
 
 	/**
-	 * Changes the Topics that this Consumer listens to. All connections regarding
-	 * the previous Topics are closed and new ones are established.
+	 * Changes the Topics that this Consumer listens to. All connections regarding the previous
+	 * Topics are closed and new ones are established.
 	 *
 	 * @param newUserTopics the new Topics to listen for
 	 *
-	 * @throws ServerException if an I/O error occurs while closing existing
-	 *                         connections
+	 * @throws ServerException if an I/O error occurs while closing existing connections
 	 */
 	void setTopics(Set<UserTopic> newUserTopics) throws ServerException {
 		topicManager.close();
 
-		for (final UserTopic userTopic : newUserTopics)
+		for (final UserTopic userTopic : newUserTopics) {
 			listenForTopic(userTopic, true);
+		}
 	}
 
 	/**
@@ -95,8 +93,7 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	 *
 	 * @param topicName the name of the Topic
 	 *
-	 * @return a List with all the Posts not yet pulled, sorted from earliest to
-	 *         latest
+	 * @return a List with all the Posts not yet pulled, sorted from earliest to latest
 	 *
 	 * @throws NoSuchElementException if no Topic with the given name exists
 	 */
@@ -105,8 +102,8 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	}
 
 	/**
-	 * Registers a new Topic for this Consumer to continuously fetch new Posts
-	 * from by creating a new Thread that initialises that connection.
+	 * Registers a new Topic for this Consumer to continuously fetch new Posts from by creating a
+	 * new Thread that initialises that connection.
 	 *
 	 * @param topicName the name of the Topic to fetch from
 	 */
@@ -128,19 +125,18 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	}
 
 	/**
-	 * Registers an existing Topic for this Consumer to continuously fetch new Posts
-	 * from by creating a new Thread that initialises that connection.
+	 * Registers an existing Topic for this Consumer to continuously fetch new Posts from by
+	 * creating a new Thread that initialises that connection.
 	 *
-	 * @param userTopic    the Topic to fetch from
+	 * @param userTopic the Topic to fetch from
 	 * @param existing {@code true} is the Topic already exists, {@code false} if it has just been
-	 *                 created prior to this method call
+	 * 		created prior to this method call
 	 */
 	private void listenForTopic(UserTopic userTopic, boolean existing) {
 		LG.sout("Consumer#listenForTopic(%s)", userTopic);
 		userTopic.subscribe(this);
-		Thread thread = existing
-						? new ListenForExistingTopicThread(userTopic)
-						: new ListenForNewTopicThread(userTopic);
+		Thread thread = existing ? new ListenForExistingTopicThread(userTopic)
+		                         : new ListenForNewTopicThread(userTopic);
 		thread.start();
 	}
 
@@ -153,43 +149,33 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 	@Override
 	public synchronized void notify(Packet packet, String topicName) {
 		LG.sout("Consumer#notify(%s, %s)", packet, topicName);
-		if (packet.isFinal())
+		if (packet.isFinal()) {
 			userStub.fireEvent(UserEvent.successful(Tag.MESSAGE_RECEIVED, topicName));
+		}
 	}
 
 	// @SuppressWarnings("AccessingNonPublicFieldOfAnotherObject")
 	private static final class TopicManager implements AutoCloseable {
 
-		private TopicManager() {}
-
-		private static final class TopicData {
-			final UserTopic userTopic;
-			long pointer;
-			Socket      socket = null;
-
-			private TopicData(UserTopic userTopic) {
-				this.userTopic = userTopic;
-				pointer = userTopic.getLastPostId();
-			}
-		}
-
 		private final Map<String, TopicData> tdMap = new HashMap<>();
+
+		private TopicManager() {}
 
 		/**
 		 * Returns all Posts from a Topic which have not been previously fetched.
 		 *
 		 * @param topicName the name of the Topic
 		 *
-		 * @return a List with all the Posts not yet fetched, sorted from earliest to
-		 *         latest
+		 * @return a List with all the Posts not yet fetched, sorted from earliest to latest
 		 *
 		 * @throws NoSuchElementException if no Topic with the given name exists
 		 */
 		private List<Post> fetch(String topicName) {
 			LG.sout("Consumer#fetch(%s)", topicName);
 			LG.in();
-			if (!tdMap.containsKey(topicName))
+			if (!tdMap.containsKey(topicName)) {
 				throw new NoSuchElementException(ClientNode.getTopicDNEString(topicName));
+			}
 
 			final TopicData td = tdMap.get(topicName);
 
@@ -207,16 +193,20 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		/**
 		 * Adds a Topic to this Manager and registers its socket from where to fetch.
 		 *
-		 * @param userTopic  the Topic
+		 * @param userTopic the Topic
 		 * @param socket the socket from where it will fetch
 		 *
-		 * @throws IllegalArgumentException if this Manager already has a socket for a
-		 *                                  Topic with the same name.
+		 * @throws IllegalArgumentException if this Manager already has a socket for a Topic with
+		 * 		the same name.
 		 */
 		void addSocket(UserTopic userTopic, Socket socket) {
 			LG.sout("TopicManager#addSocket(%s, %s)", userTopic, socket);
-			add(userTopic);
-			tdMap.get(userTopic.getName()).socket = socket;
+			final String topicName = userTopic.getName();
+			if (tdMap.containsKey(topicName)) {
+				throw new IllegalArgumentException(ClientNode.getTopicAEString(topicName));
+			}
+
+			tdMap.put(topicName, new TopicData(userTopic, socket));
 		}
 
 		/**
@@ -225,44 +215,44 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		 * @param topicName the name of the Topic to remove
 		 *
 		 * @throws IOException if an I/O Exception occurs while closing the socket
-		 * @throws NoSuchElementException if this Manager doesn't have a Topic with the given name
+		 * @throws NoSuchElementException if this Manager doesn't have a Topic with the given
+		 * 		name
 		 */
 		void removeSocket(String topicName) throws IOException, NoSuchElementException {
 			LG.sout("TopicManager#removeSocket(%s)", topicName);
-			if (!tdMap.containsKey(topicName))
+			if (!tdMap.containsKey(topicName)) {
 				throw new NoSuchElementException(ClientNode.getTopicDNEString(topicName));
+			}
 
 			tdMap.get(topicName).socket.close();
 
 			tdMap.remove(topicName);
 		}
 
-		/**
-		 * Partially adds a Topic to this Manager by creating its associated TopicData object.
-		 *
-		 * @param userTopic the Topic
-		 *
-		 * @throws IllegalArgumentException if this Manager already has a socket for a
-		 *                                  Topic with the same name.
-		 */
-		private void add(UserTopic userTopic) {
-			final String topicName = userTopic.getName();
-			if (tdMap.containsKey(topicName))
-				throw new IllegalArgumentException(ClientNode.getTopicAEString(topicName));
-
-			tdMap.put(topicName, new TopicManager.TopicData(userTopic));
-		}
-
 		@Override
 		public void close() throws ServerException {
 			try {
-				for (final TopicManager.TopicData td : tdMap.values())
+				for (final TopicManager.TopicData td : tdMap.values()) {
 					td.socket.close();
+				}
 			} catch (IOException e) {
 				throw new ServerException(ClientNode.CONNECTION_TO_SERVER_LOST_STRING, e);
 			}
 
 			tdMap.clear();
+		}
+
+		private static final class TopicData {
+
+			final UserTopic userTopic;
+			final Socket socket;
+			long pointer;
+
+			private TopicData(UserTopic userTopic, Socket socket) {
+				this.userTopic = userTopic;
+				pointer = userTopic.getLastPostId();
+				this.socket = socket;
+			}
 		}
 	}
 
@@ -276,25 +266,27 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		}
 
 		@Override
-		protected void doWorkAndMaybeCloseSocket(boolean success, Socket socket, ObjectOutputStream oos,
-												 ObjectInputStream ois) throws IOException {
+		protected void doWorkAndMaybeCloseSocket(boolean success, Socket socket,
+				ObjectOutputStream oos, ObjectInputStream ois) throws IOException {
 
 			if (!success) {
 				socket.close();
 				throw new ServerException(ClientNode.getTopicDNEString(topicName));
 			}
 
-			final Thread pullThread = new PullThread(ois,
-					userTopic, (cbSuccess, cbTopicName, cbCause) -> {
-				if (cbSuccess) {
-					topicManager.addSocket(userTopic, socket);
-					if (cbCause instanceof EOFException) {
-						userStub.fireEvent(UserEvent.successful(Tag.TOPIC_DELETED, cbTopicName));
-					} else if (cbCause instanceof SocketException) {
-						userStub.fireEvent(UserEvent.successful(Tag.TOPIC_LISTEN_STOPPED, cbTopicName));
-					}
-				}
-			});
+			final Thread pullThread =
+					new PullThread(ois, userTopic, (cbSuccess, cbTopicName, cbCause) -> {
+						if (cbSuccess) {
+							topicManager.addSocket(userTopic, socket);
+							if (cbCause instanceof EOFException) {
+								userStub.fireEvent(
+										UserEvent.successful(Tag.TOPIC_DELETED, cbTopicName));
+							} else if (cbCause instanceof SocketException) {
+								userStub.fireEvent(UserEvent.successful(Tag.TOPIC_LISTEN_STOPPED,
+										cbTopicName));
+							}
+						}
+					});
 			pullThread.start();
 		}
 
@@ -306,7 +298,8 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 
 	private final class ListenForExistingTopicThread extends ClientThread {
 
-		// NOTE: only tag changes between the ListenFor???TopicThreads to differentiate between events
+		// NOTE: only tag changes between the ListenFor???TopicThreads to differentiate between
+		// events
 
 		private final UserTopic userTopic;
 
@@ -316,24 +309,26 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		}
 
 		@Override
-		protected void doWorkAndMaybeCloseSocket(boolean success, Socket socket, ObjectOutputStream oos,
-												 ObjectInputStream ois) throws IOException {
+		protected void doWorkAndMaybeCloseSocket(boolean success, Socket socket,
+				ObjectOutputStream oos, ObjectInputStream ois) throws IOException {
 			if (!success) {
 				socket.close();
 				throw new ServerException(ClientNode.getTopicDNEString(topicName));
 			}
 
-			final Thread pullThread = new PullThread(ois,
-					userTopic, (cbSuccess, cbTopicName, cbCause) -> {
-				if (cbSuccess) {
-					topicManager.addSocket(userTopic, socket);
-					if (cbCause instanceof EOFException) {
-						userStub.fireEvent(UserEvent.successful(Tag.TOPIC_DELETED, cbTopicName));
-					} else if (cbCause instanceof SocketException) {
-						userStub.fireEvent(UserEvent.successful(Tag.TOPIC_LISTEN_STOPPED, cbTopicName));
-					}
-				}
-			});
+			final Thread pullThread =
+					new PullThread(ois, userTopic, (cbSuccess, cbTopicName, cbCause) -> {
+						if (cbSuccess) {
+							topicManager.addSocket(userTopic, socket);
+							if (cbCause instanceof EOFException) {
+								userStub.fireEvent(
+										UserEvent.successful(Tag.TOPIC_DELETED, cbTopicName));
+							} else if (cbCause instanceof SocketException) {
+								userStub.fireEvent(UserEvent.successful(Tag.TOPIC_LISTEN_STOPPED,
+										cbTopicName));
+							}
+						}
+					});
 			pullThread.start();
 		}
 

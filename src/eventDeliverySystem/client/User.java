@@ -8,16 +8,17 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import eventDeliverySystem.client.UserEvent.Tag;
 import eventDeliverySystem.dao.IProfileDAO;
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Post;
-import eventDeliverySystem.client.UserEvent.Tag;
 import eventDeliverySystem.util.LG;
 
 /**
  * Facade for the different components that make up a User. Only objects of this class are needed to
  * interact with the client side of the event delivery system. The other public classes of this
- * package allow for more intricate interactions between the system and the surrounding application.
+ * package allow for more intricate interactions between the system and the surrounding
+ * application.
  * <p>
  * A single object of this class needs to be created on start up, which can be then be reused with
  * the help of the {@code switchToExistingProfile} and {@code switchToNewProfile} methods.
@@ -31,30 +32,29 @@ public final class User {
 	private final UserStub userStub = new UserStub();
 
 	private final IProfileDAO profileDao;
-	private Profile                 currentProfile = null;
+	private Profile currentProfile = null;
 
 	private final Publisher publisher;
-	private final Consumer  consumer;
+	private final Consumer consumer;
 
 	/**
-	 * Retrieves the user's data and saved posts, establishes the connection to the server,
-	 * prepares to receive and send posts and returns the new User object.
+	 * Retrieves the user's data and saved posts, establishes the connection to the server, prepares
+	 * to receive and send posts and returns the new User object.
 	 *
-	 * @param serverIP    the IP of the server
-	 * @param serverPort  the port of the server
-	 * @param profileDao  the Profile Data Access Object for this User
+	 * @param serverIP the IP of the server
+	 * @param serverPort the port of the server
+	 * @param profileDao the Profile Data Access Object for this User
 	 * @param profileName the name of the existing profile
 	 *
 	 * @return the new User
 	 *
 	 * @throws IOException if an I/O error occurs while interacting with the IProfileDAO object
-	 * @throws ServerException      if the connection to the server could not be established
+	 * @throws ServerException if the connection to the server could not be established
 	 * @throws UnknownHostException if no IP address for the host could be found, or if a scope_id
-	 * 								was specified for a global IPv6 address while resolving the
-	 * 								defaultServerIP.
+	 * 		was specified for a global IPv6 address while resolving the defaultServerIP.
 	 */
 	public static User loadExisting(String serverIP, int serverPort, IProfileDAO profileDao,
-	        String profileName) throws IOException {
+			String profileName) throws IOException {
 		final User user = new User(serverIP, serverPort, profileDao);
 		user.switchToExistingProfile(profileName);
 		return user;
@@ -63,21 +63,20 @@ public final class User {
 	/**
 	 * Creates a new User in the file system and returns the new User object.
 	 *
-	 * @param serverIP   the IP of the server
+	 * @param serverIP the IP of the server
 	 * @param serverPort the port of the server
 	 * @param profileDao the Profile Data Access Object for this User
-	 * @param name       the name of the new Profile
+	 * @param name the name of the new Profile
 	 *
 	 * @return the new User
 	 *
 	 * @throws IOException if an I/O error occurs while interacting with the IProfileDAO object
-	 * @throws ServerException      if the connection to the server could not be established
+	 * @throws ServerException if the connection to the server could not be established
 	 * @throws UnknownHostException if no IP address for the host could be found, or if a scope_id
-	 * 								was specified for a global IPv6 address while resolving the
-	 * 								defaultServerIP.
+	 * 		was specified for a global IPv6 address while resolving the defaultServerIP.
 	 */
 	public static User createNew(String serverIP, int serverPort, IProfileDAO profileDao,
-	        String name) throws IOException {
+			String name) throws IOException {
 		final User user = new User(serverIP, serverPort, profileDao);
 		user.switchToNewProfile(name);
 		return user;
@@ -126,7 +125,7 @@ public final class User {
 	 *
 	 * @param profileName the name of the new Profile
 	 *
-	 * @throws ServerException     if the connection to the server could not be established
+	 * @throws ServerException if the connection to the server could not be established
 	 * @throws IOException if an I/O error occurs while interacting with the IProfileDAO object
 	 */
 	public void switchToNewProfile(String profileName) throws IOException {
@@ -140,7 +139,7 @@ public final class User {
 	 *
 	 * @param profileName the name of the existing Profile
 	 *
-	 * @throws ServerException     if the connection to the server could not be established
+	 * @throws ServerException if the connection to the server could not be established
 	 * @throws IOException if an I/O error occurs while interacting with the IProfileDAO object
 	 * @throws NoSuchElementException if no Profile with that name exists
 	 */
@@ -165,7 +164,7 @@ public final class User {
 		if (userIsNotSubscribed(topicName)) {
 			userStub.fireEvent(UserEvent.failed(Tag.MESSAGE_SENT, topicName,
 					new NoSuchElementException("This User can't post to Topic " + topicName
-											   + " because they aren't subscribed to it")));
+					                           + " because they aren't subscribed to it")));
 		} else {
 			publisher.push(post, topicName);
 		}
@@ -174,8 +173,8 @@ public final class User {
 	}
 
 	/**
-	 * Creates a topic on the server. This operation fires a user event with the
-	 * {@code TOPIC_CREATED} tag when it's completed.
+	 * Creates a topic on the server. This operation fires a user event with the {@code
+	 * TOPIC_CREATED} tag when it's completed.
 	 *
 	 * @param topicName the name of the Topic to create
 	 */
@@ -189,9 +188,9 @@ public final class User {
 	}
 
 	/**
-	 * Deletes a topic on the server. This operation fires a user event with the
-	 * {@code SERVER_TOPIC_DELETED} tag when it's completed. Every user that is subscribed to this
-	 * Topic receives a user event with the {@code TOPIC_DELETED} tag.
+	 * Deletes a topic on the server. This operation fires a user event with the {@code
+	 * SERVER_TOPIC_DELETED} tag when it's completed. Every user that is subscribed to this Topic
+	 * receives a user event with the {@code TOPIC_DELETED} tag.
 	 *
 	 * @param topicName the name of the Topic to delete
 	 */
@@ -202,7 +201,7 @@ public final class User {
 		if (userIsNotSubscribed(topicName)) {
 			userStub.fireEvent(UserEvent.failed(Tag.TOPIC_DELETED, topicName,
 					new NoSuchElementException("This User can't delete Topic " + topicName
-											   + " because they aren't subscribed to it")));
+					                           + " because they aren't subscribed to it")));
 		} else {
 			publisher.deleteTopic(topicName);
 		}
@@ -211,8 +210,8 @@ public final class User {
 	}
 
 	/**
-	 * Pulls all new Posts from a Topic, adds them to the Profile and saves them to
-	 * the file system. Posts that have already been pulled are not pulled again.
+	 * Pulls all new Posts from a Topic, adds them to the Profile and saves them to the file system.
+	 * Posts that have already been pulled are not pulled again.
 	 *
 	 * @param topicName the name of the Topic from which to pull
 	 *
@@ -251,8 +250,8 @@ public final class User {
 	}
 
 	/**
-	 * Stops this user from listening for a Topic. This operation fires a user event with the
-	 * {@code TOPIC_LISTEN_STOPPED} tag.
+	 * Stops this user from listening for a Topic. This operation fires a user event with the {@code
+	 * TOPIC_LISTEN_STOPPED} tag.
 	 *
 	 * @param topicName the name of the Topic to stop listening for
 	 */
@@ -263,7 +262,7 @@ public final class User {
 		if (userIsNotSubscribed(topicName)) {
 			userStub.fireEvent(UserEvent.failed(Tag.TOPIC_LISTEN_STOPPED, topicName,
 					new NoSuchElementException("This User can't unsubscribe from Topic " + topicName
-											   + " because they aren't subscribed to it")));
+					                           + " because they aren't subscribed to it")));
 		} else {
 			consumer.stopListeningForTopic(topicName);
 		}
@@ -282,7 +281,7 @@ public final class User {
 
 	private boolean userIsNotSubscribed(String topicName) {
 		return currentProfile.getTopics().stream()
-							 .noneMatch(topic -> topic.getName().equals(topicName));
+		                     .noneMatch(topic -> topic.getName().equals(topicName));
 	}
 
 	/**

@@ -22,7 +22,7 @@ final class ServerException extends IOException {
 	 * Constructs a ServerException with the specified detail message and cause.
 	 *
 	 * @param message the detail message
-	 * @param cause   the underlying cause
+	 * @param cause the underlying cause
 	 */
 	ServerException(String message, Throwable cause) {
 		super(message, cause);

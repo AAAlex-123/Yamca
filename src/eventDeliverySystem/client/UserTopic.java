@@ -31,7 +31,7 @@ final class UserTopic extends AbstractTopic {
 	}
 
 	// first element is the first post added
-	private final List<Post>         postList = new LinkedList<>();
+	private final List<Post> postList = new LinkedList<>();
 	private final Map<Long, Integer> indexPerPostId = new HashMap<>();
 
 	/**
@@ -62,12 +62,13 @@ final class UserTopic extends AbstractTopic {
 	}
 
 	private final List<Packet> currPackets = new LinkedList<>();
-	private PostInfo           currPI = null;
+	private PostInfo currPI = null;
 
 	@Override
 	public void postHook(PostInfo postInfo) {
-		if (!currPackets.isEmpty())
+		if (!currPackets.isEmpty()) {
 			throw new IllegalStateException("Received PostInfo while more Packets remain");
+		}
 
 		currPI = postInfo;
 	}
@@ -77,8 +78,8 @@ final class UserTopic extends AbstractTopic {
 		currPackets.add(packet);
 
 		if (packet.isFinal()) {
-			final Packet[] data          = currPackets.toArray(UserTopic.ZERO_LENGTH_PACKET_ARRAY);
-			final Post     completedPost = Post.fromPackets(data, currPI);
+			final Packet[] data = currPackets.toArray(UserTopic.ZERO_LENGTH_PACKET_ARRAY);
+			final Post completedPost = Post.fromPackets(data, currPI);
 			post(completedPost);
 
 			currPackets.clear();
@@ -91,8 +92,9 @@ final class UserTopic extends AbstractTopic {
 	 * @param posts the Posts
 	 */
 	void postAll(List<Post> posts) {
-		for (final Post post : posts)
+		for (final Post post : posts) {
 			post(post);
+		}
 	}
 
 	private void post(Post post) {
@@ -108,13 +110,13 @@ final class UserTopic extends AbstractTopic {
 	}
 
 	/**
-	 * Returns the Posts in this Topic that were posted after the Post with the
-	 * given ID. The Post with the given ID is not returned.
+	 * Returns the Posts in this Topic that were posted after the Post with the given ID. The Post
+	 * with the given ID is not returned.
 	 *
 	 * @param lastPostId the ID of the Post.
 	 *
-	 * @return the Posts in this Topic that were posted after the Post with the
-	 *         given ID, sorted from earliest to latest
+	 * @return the Posts in this Topic that were posted after the Post with the given ID, sorted
+	 * 		from earliest to latest
 	 *
 	 * @throws NoSuchElementException if no Post in this Topic has the given ID
 	 */
@@ -123,12 +125,13 @@ final class UserTopic extends AbstractTopic {
 		LG.in();
 
 		final Integer index = indexPerPostId.get(lastPostId);
-		if (index == null)
+		if (index == null) {
 			throw new NoSuchElementException(
-			        "No post with id " + lastPostId + " found in this Topic");
+					"No post with id " + lastPostId + " found in this Topic");
+		}
 
-		final List<Post> postsAfterGivenPost = new LinkedList<>(
-		        postList.subList(index + 1, postList.size()));
+		final List<Post> postsAfterGivenPost =
+				new LinkedList<>(postList.subList(index + 1, postList.size()));
 		LG.sout("postsAfterGivenPost=%s", postsAfterGivenPost);
 		LG.out();
 		return postsAfterGivenPost;
@@ -151,10 +154,12 @@ final class UserTopic extends AbstractTopic {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (!super.equals(obj))
+		}
+		if (!super.equals(obj)) {
 			return false;
+		}
 		return (obj instanceof UserTopic);
 	}
 

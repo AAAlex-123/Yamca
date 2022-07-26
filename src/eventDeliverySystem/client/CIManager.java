@@ -24,12 +24,12 @@ final class CIManager {
 	private final Map<String, ConnectionInfo> cache = new HashMap<>();
 
 	private final InetAddress defaultBrokerIP;
-	private final int         defaultBrokerPort;
+	private final int defaultBrokerPort;
 
 	/**
 	 * Constructs the CIManager given the ConnectionInfo to the default Broker.
 	 *
-	 * @param defaultBrokerIP   the InetAddress of the default Broker to connect to
+	 * @param defaultBrokerIP the InetAddress of the default Broker to connect to
 	 * @param defaultBrokerPort the Port of the default Broker to connect to
 	 */
 	CIManager(InetAddress defaultBrokerIP, int defaultBrokerPort) {
@@ -49,8 +49,9 @@ final class CIManager {
 	 */
 	ConnectionInfo getConnectionInfoForTopic(String topicName) throws ServerException {
 		final ConnectionInfo cachedAddress = cache.get(topicName);
-		if (cachedAddress != null)
+		if (cachedAddress != null) {
 			return cachedAddress;
+		}
 
 		final ConnectionInfo newAddress = getCIForTopic(topicName);
 		cache.put(topicName, newAddress);
@@ -66,7 +67,6 @@ final class CIManager {
 			final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
 			return (ConnectionInfo) ois.readObject();
-
 		} catch (ClassNotFoundException e) {
 			throw new RuntimeException(e);
 		} catch (final IOException e) {

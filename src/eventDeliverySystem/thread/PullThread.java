@@ -18,14 +18,14 @@ import eventDeliverySystem.util.LG;
 public final class PullThread extends Thread {
 
 	private final ObjectInputStream ois;
-	private final AbstractTopic     topic;
+	private final AbstractTopic topic;
 	private final Callback callback;
 
 	/**
 	 * Constructs the Thread that reads some Posts from a stream and posts them to a Topic.
 	 *
 	 * @param stream the input stream from which to read the Posts
-	 * @param topic  the Topic in which the new Posts will be added
+	 * @param topic the Topic in which the new Posts will be added
 	 */
 	public PullThread(ObjectInputStream stream, AbstractTopic topic) {
 		this(stream, topic, null);
@@ -35,8 +35,8 @@ public final class PullThread extends Thread {
 	 * Constructs the Thread that reads some Posts from a stream and posts them to a Topic and
 	 * additionally calls a callback right before finishing execution.
 	 *
-	 * @param stream   the input stream from which to read the Posts
-	 * @param topic    the Topic in which the new Posts will be added
+	 * @param stream the input stream from which to read the Posts
+	 * @param topic the Topic in which the new Posts will be added
 	 * @param callback the callback to call right before finishing execution
 	 *
 	 * @see Callback
@@ -79,20 +79,20 @@ public final class PullThread extends Thread {
 			if (callback != null) {
 				callback.onCompletion(true, topic.getName(), null);
 			}
-
 		} catch (final EOFException | SocketException e) {
 			LG.sout("EOF/SOCKET EXCEPTION ON PULL THREAD");
 			e.printStackTrace();
 
-			if (callback != null)
+			if (callback != null) {
 				callback.onCompletion(true, topic.getName(), e);
-
+			}
 		} catch (final ClassNotFoundException | IOException e) {
 			LG.err("IOException in PullThread#run()");
 			e.printStackTrace();
 
-			if (callback != null)
+			if (callback != null) {
 				callback.onCompletion(false, topic.getName(), e);
+			}
 		}
 
 		LG.sout("/%s#run()", getName());

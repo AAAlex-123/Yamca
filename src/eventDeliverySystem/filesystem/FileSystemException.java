@@ -15,7 +15,7 @@ public final class FileSystemException extends IOException {
 	 *
 	 * @param message the detail message
 	 * @param cause the underlying cause
-	 * @param path  the path related to the Exception
+	 * @param path the path related to the Exception
 	 */
 	FileSystemException(String message, IOException cause, Path path) {
 		super(message + ": " + path, cause);

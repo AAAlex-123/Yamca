@@ -1,13 +1,5 @@
 package eventDeliverySystem.server;
 
-
-import eventDeliverySystem.datastructures.AbstractTopic;
-import eventDeliverySystem.datastructures.Packet;
-import eventDeliverySystem.datastructures.Post;
-import eventDeliverySystem.datastructures.PostInfo;
-import eventDeliverySystem.dao.ITopicDAO;
-import eventDeliverySystem.util.LG;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -15,6 +7,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+
+import eventDeliverySystem.dao.ITopicDAO;
+import eventDeliverySystem.datastructures.AbstractTopic;
+import eventDeliverySystem.datastructures.Packet;
+import eventDeliverySystem.datastructures.Post;
+import eventDeliverySystem.datastructures.PostInfo;
+import eventDeliverySystem.util.LG;
 
 /**
  * An extension of the Abstract Topic that stores data as required by Brokers. The Posts are stored
@@ -31,9 +30,9 @@ final class BrokerTopic extends AbstractTopic {
 
 	private final ITopicDAO postDAO;
 
-	private final List<PostInfo>          postInfoList = new LinkedList<>();
+	private final List<PostInfo> postInfoList = new LinkedList<>();
 	private final Map<Long, List<Packet>> packetsPerPostInfoMap = new HashMap<>();
-	private final Map<Long, Integer>      indexPerPostInfoId = new HashMap<>();
+	private final Map<Long, Integer> indexPerPostInfoId = new HashMap<>();
 
 	{
 		postInfoList.add(BrokerTopic.dummyPostInfo);
@@ -50,8 +49,9 @@ final class BrokerTopic extends AbstractTopic {
 		this(abstractTopic.getName(), postDAO);
 		abstractTopic.forEach(post -> {
 			post(post.getPostInfo());
-			for (Packet packet : Packet.fromPost(post))
+			for (Packet packet : Packet.fromPost(post)) {
 				post(packet);
+			}
 		});
 	}
 
@@ -79,8 +79,9 @@ final class BrokerTopic extends AbstractTopic {
 		for (int i = postInfoList.size() - 1; i >= 1; i--) { // index 0 = dummyPostInfo
 			PostInfo postInfo = postInfoList.get(i);
 
-			if (isPostComplete.test(postInfo))
+			if (isPostComplete.test(postInfo)) {
 				return postInfo.getId();
+			}
 		}
 
 		// no complete posts or no posts in this BrokerTopic
@@ -91,7 +92,7 @@ final class BrokerTopic extends AbstractTopic {
 	public void postHook(PostInfo postInfo) {
 		postInfoList.add(postInfo);
 
-		final long         postId     = postInfo.getId();
+		final long postId = postInfo.getId();
 		final List<Packet> packetList = new LinkedList<>();
 
 		packetsPerPostInfoMap.put(postId, packetList);
@@ -110,21 +111,21 @@ final class BrokerTopic extends AbstractTopic {
 	 * from a certain PostInfo object. The PostInfo with the given ID and its Packets are not
 	 * returned.
 	 *
-	 * @param postId                     the ID of the PostInfo
-	 * @param emptyPostInfoList          the empty list where the PostInfo objects will be added,
-	 *                                   sorted from earliest to latest
+	 * @param postId the ID of the PostInfo
+	 * @param emptyPostInfoList the empty list where the PostInfo objects will be added, sorted
+	 * 		from earliest to latest
 	 * @param emptyPacketsPerPostInfoMap the empty map where the Packets of every PostInfo object
-	 *                                   will be added
+	 * 		will be added
 	 */
 	synchronized void getPostsSince(long postId, List<PostInfo> emptyPostInfoList,
-									Map<? super Long, Packet[]> emptyPacketsPerPostInfoMap) {
+			Map<? super Long, Packet[]> emptyPacketsPerPostInfoMap) {
 
 		final Integer index = indexPerPostInfoId.get(postId);
 
 		emptyPostInfoList.addAll(postInfoList.subList(index + 1, postInfoList.size()));
 
 		for (PostInfo pi : emptyPostInfoList) {
-			final long         id = pi.getId();
+			final long id = pi.getId();
 			final List<Packet> ls = packetsPerPostInfoMap.get(id);
 			emptyPacketsPerPostInfoMap.put(id, ls.toArray(BrokerTopic.ZERO_LENGTH_PACKET_ARRAY));
 		}
@@ -155,10 +156,12 @@ final class BrokerTopic extends AbstractTopic {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (!super.equals(obj))
+		}
+		if (!super.equals(obj)) {
 			return false;
+		}
 		return (obj instanceof BrokerTopic);
 	}
 

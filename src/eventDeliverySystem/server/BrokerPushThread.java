@@ -12,11 +12,12 @@ import java.util.Queue;
 import eventDeliverySystem.datastructures.AbstractTopic;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.PostInfo;
-import eventDeliverySystem.util.LG;
 import eventDeliverySystem.datastructures.Subscriber;
+import eventDeliverySystem.util.LG;
 
 /**
- * A Thread responsible for streaming newly received packets for a BrokerTopic to a single Consumer.
+ * A Thread responsible for streaming newly received packets for a BrokerTopic to a single
+ * Consumer.
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
@@ -24,21 +25,18 @@ import eventDeliverySystem.datastructures.Subscriber;
 final class BrokerPushThread extends Thread implements Subscriber {
 
 	private static final long NO_CURRENT_POST_ID = -1L;
-
-	private long                          currentPostId = BrokerPushThread.NO_CURRENT_POST_ID;
 	private final Deque<PostInfo> postInfoList = new LinkedList<>();
 	private final Map<Long, List<Packet>> buffers = new HashMap<>();
-
-	private final Queue<Object>      queue = new LinkedList<>();
+	private final Queue<Object> queue = new LinkedList<>();
 	private final ObjectOutputStream oos;
-
 	private final Object monitor = new Object();
+	private long currentPostId = BrokerPushThread.NO_CURRENT_POST_ID;
 
 	/**
 	 * Constructs the Thread that writes some Posts to a stream. This Thread is subscribed to a
 	 * Topic and is notified each time there is new data in the Topic.
 	 *
-	 * @param topic  the Topic to subscribe to
+	 * @param topic the Topic to subscribe to
 	 * @param stream the output stream to which to write the data
 	 */
 	BrokerPushThread(AbstractTopic topic, ObjectOutputStream stream) {
@@ -100,7 +98,6 @@ final class BrokerPushThread extends Thread implements Subscriber {
 			currentPostId = postInfo.getId();
 			// start streaming post
 			queue.add(postInfo);
-
 		} else {
 			// add this post to buffer
 			postInfoList.addLast(postInfo);
@@ -125,7 +122,6 @@ final class BrokerPushThread extends Thread implements Subscriber {
 
 			// add packet to buffer because it's not being streamed
 			buffers.get(incomingPostId).add(packet);
-
 		} else {
 			// stream packet
 			queue.add(packet);
@@ -156,7 +152,8 @@ final class BrokerPushThread extends Thread implements Subscriber {
 					// stream all packets in buffer
 					finalReached = emptyBufferOfCurrentPost();
 
-					// keep streaming the next post in buffer if the previous has been fully streamed
+					// keep streaming the next post in buffer if the previous has been fully
+					// streamed
 				} while (finalReached);
 			}
 		}
@@ -181,8 +178,9 @@ final class BrokerPushThread extends Thread implements Subscriber {
 
 		// whether this post has been fully streamed
 		boolean fullyStreamed = lastPacket.isFinal();
-		if (fullyStreamed)
+		if (fullyStreamed) {
 			buffers.remove(currentPostId);
+		}
 
 		return fullyStreamed;
 	}

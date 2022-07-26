@@ -31,51 +31,51 @@ public final class PushThread extends Thread {
 		KEEP_ALIVE,
 	}
 
-	private final ObjectOutputStream  oos;
-	private final String              topicName;
-	private final List<PostInfo>      postInfoList;
+	private final ObjectOutputStream oos;
+	private final String topicName;
+	private final List<PostInfo> postInfoList;
 	private final Map<Long, Packet[]> packetMap;
-	private final Protocol            protocol;
-	private final Callback            callback;
+	private final Protocol protocol;
+	private final Callback callback;
 
 	/**
 	 * Constructs the Thread that writes some Posts to a stream.
 	 *
-	 * @param stream    the output stream to which to write the Posts
+	 * @param stream the output stream to which to write the Posts
 	 * @param postInfoList the PostInfo objects to write to the stream
-	 * @param packetMap   the array of Packets to write for each PostInfo object
-	 * @param protocol  the protocol to use when pushing, which alters the behaviour of the Pull
-	 *                  Thread
+	 * @param packetMap the array of Packets to write for each PostInfo object
+	 * @param protocol the protocol to use when pushing, which alters the behaviour of the Pull
+	 * 		Thread
 	 *
 	 * @see Protocol
 	 */
 	public PushThread(ObjectOutputStream stream, List<PostInfo> postInfoList,
-					  Map<Long, Packet[]> packetMap, Protocol protocol) {
+			Map<Long, Packet[]> packetMap, Protocol protocol) {
 		this(stream, null, postInfoList, packetMap, protocol, null);
 	}
 
 	/**
 	 * Constructs the Thread that, when run, will write some Posts to a stream.
 	 *
-	 * @param stream    the output stream to which to write the Posts
+	 * @param stream the output stream to which to write the Posts
 	 * @param topicName the name of the Topic that corresponds to the stream
 	 * @param postInfoList the PostInfo objects to write to the stream
-	 * @param packetMap   the array of Packets to write for each PostInfo object
-	 * @param protocol  the protocol to use when pushing, which alters the behaviour
-	 *                  of the Pull Thread
-	 * @param callback  the callback to call right before finishing execution
+	 * @param packetMap the array of Packets to write for each PostInfo object
+	 * @param protocol the protocol to use when pushing, which alters the behaviour of the Pull
+	 * 		Thread
+	 * @param callback the callback to call right before finishing execution
 	 *
 	 * @throws NullPointerException if a callback is provided but topicName is {@code null}
-	 *
 	 * @see Protocol
 	 * @see Callback
 	 */
 	public PushThread(ObjectOutputStream stream, String topicName, List<PostInfo> postInfoList,
-					  Map<Long, Packet[]> packetMap, Protocol protocol, Callback callback) {
+			Map<Long, Packet[]> packetMap, Protocol protocol, Callback callback) {
 		super("PushThread-" + postInfoList.size() + '-' + protocol);
 
-		if (callback != null && topicName == null)
+		if (callback != null && topicName == null) {
 			throw new NullPointerException("topicName can't be null if a callback is provided");
+		}
 
 		oos = stream;
 		this.topicName = topicName;
@@ -95,9 +95,8 @@ public final class PushThread extends Thread {
 			LG.sout("protocol=%s, posts.size()=%d", protocol, postInfoList.size());
 			LG.in();
 
-			final int postCount = protocol == Protocol.NORMAL
-					? postInfoList.size()
-					: Integer.MAX_VALUE;
+			final int postCount =
+					protocol == Protocol.NORMAL ? postInfoList.size() : Integer.MAX_VALUE;
 
 			oos.writeInt(postCount);
 
@@ -106,23 +105,25 @@ public final class PushThread extends Thread {
 				oos.writeObject(postInfo);
 
 				final Packet[] packetArray = packetMap.get(postInfo.getId());
-				for (final Packet packet : packetArray)
+				for (final Packet packet : packetArray) {
 					oos.writeObject(packet);
+				}
 			}
 
 			oos.flush();
 
-			if (callback != null)
+			if (callback != null) {
 				callback.onCompletion(true, topicName, null);
+			}
 
 			LG.out();
-
 		} catch (final IOException e) {
 			LG.err("IOException in PushThread#run()%n");
 			e.printStackTrace();
 
-			if (callback != null)
+			if (callback != null) {
 				callback.onCompletion(false, topicName, e);
+			}
 		}
 
 		LG.out();

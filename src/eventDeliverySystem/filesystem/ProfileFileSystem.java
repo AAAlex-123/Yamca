@@ -22,7 +22,7 @@ import eventDeliverySystem.datastructures.Post;
  */
 public final class ProfileFileSystem implements IProfileDAO {
 
-	private final Path                         profilesRootDirectory;
+	private final Path profilesRootDirectory;
 	private final Map<String, TopicFileSystem> topicFileSystemMap = new HashMap<>();
 
 	// don't change directly, only through 'changeProfile(String)'
@@ -32,15 +32,15 @@ public final class ProfileFileSystem implements IProfileDAO {
 	 * Creates a new Profile File System for the specified root directory.
 	 *
 	 * @param profilesRootDirectory the root directory of the new file system whose subdirectories
-	 *                              correspond to different Profiles
+	 * 		correspond to different Profiles
 	 *
 	 * @throws FileSystemException if an I/O error occurs while interacting with the file system
 	 */
 	public ProfileFileSystem(Path profilesRootDirectory) throws FileSystemException {
 		if (!Files.exists(profilesRootDirectory)) {
-			throw new FileSystemException(
-					"Root directory for Users does not exist",
-					new FileNotFoundException("Directory " + profilesRootDirectory + " does not exist"),
+			throw new FileSystemException("Root directory for Users does not exist",
+					new FileNotFoundException(
+							"Directory " + profilesRootDirectory + " does not exist"),
 					profilesRootDirectory);
 		}
 
@@ -63,7 +63,9 @@ public final class ProfileFileSystem implements IProfileDAO {
 		try {
 			Files.createDirectory(topicsDirectory);
 		} catch (IOException e) {
-			throw new FileSystemException("An I/O error occurred when creating Profile " + profileName, e, topicsDirectory);
+			throw new FileSystemException(
+					"An I/O error occurred when creating Profile " + profileName, e,
+					topicsDirectory);
 		}
 
 		topicFileSystemMap.put(profileName, new TopicFileSystem(topicsDirectory));
@@ -98,15 +100,17 @@ public final class ProfileFileSystem implements IProfileDAO {
 	private Stream<String> getProfileNames() throws FileSystemException {
 		try {
 			return Files.list(profilesRootDirectory).filter(Files::isDirectory)
-						.map(path -> path.getFileName().toString());
+			            .map(path -> path.getFileName().toString());
 		} catch (IOException e) {
-			throw new FileSystemException("An I/O error occurred when retrieving the Profiles", e, profilesRootDirectory);
+			throw new FileSystemException("An I/O error occurred when retrieving the Profiles", e,
+					profilesRootDirectory);
 		}
 	}
 
 	private void changeProfile(String profileName) throws NoSuchElementException {
-		if (!topicFileSystemMap.containsKey(profileName))
+		if (!topicFileSystemMap.containsKey(profileName)) {
 			throw new NoSuchElementException("Profile " + profileName + " does not exist");
+		}
 
 		currentProfileName = profileName;
 	}

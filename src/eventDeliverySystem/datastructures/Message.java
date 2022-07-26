@@ -3,9 +3,9 @@ package eventDeliverySystem.datastructures;
 import java.io.Serializable;
 
 /**
- * A wrapper holding an object and specifying its type using an enum used for
- * Internet transportation. Used to facilitate uniform communication between all
- * remote components of the system.
+ * A wrapper holding an object and specifying its type using an enum used for Internet
+ * transportation. Used to facilitate uniform communication between all remote components of the
+ * system.
  *
  * @author Dimitris Tsirmpas
  */
@@ -19,7 +19,7 @@ public final class Message implements Serializable {
 	/**
 	 * Constructs a Message with the given {@link MessageType type} and value.
 	 *
-	 * @param type  the type of the message
+	 * @param type the type of the message
 	 * @param value the value of the message
 	 */
 	public Message(MessageType type, Serializable value) {
@@ -51,8 +51,7 @@ public final class Message implements Serializable {
 	}
 
 	/**
-	 * Specifies the purpose of a Message, thereby indirectly indicating the type of
-	 * its value.
+	 * Specifies the purpose of a Message, thereby indirectly indicating the type of its value.
 	 *
 	 * @author Alex Mandelias
 	 * @author Dimitris Tsirmpas

@@ -13,18 +13,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import eventDeliverySystem.datastructures.AbstractTopic;
-import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.dao.ITopicDAO;
+import eventDeliverySystem.datastructures.AbstractTopic;
+import eventDeliverySystem.datastructures.AbstractTopic.TopicToken;
+import eventDeliverySystem.datastructures.ConnectionInfo;
 import eventDeliverySystem.datastructures.Message;
 import eventDeliverySystem.datastructures.Packet;
 import eventDeliverySystem.datastructures.PostInfo;
-import eventDeliverySystem.datastructures.AbstractTopic.TopicToken;
+import eventDeliverySystem.datastructures.Subscriber;
 import eventDeliverySystem.thread.PullThread;
 import eventDeliverySystem.thread.PushThread;
 import eventDeliverySystem.thread.PushThread.Protocol;
 import eventDeliverySystem.util.LG;
-import eventDeliverySystem.datastructures.Subscriber;
 
 /**
  * A remote component that forms the backbone of the EventDeliverySystem. Brokers act as part of a
@@ -41,7 +41,7 @@ public final class Broker implements Runnable, AutoCloseable {
 
 	// no need to synchronise because these practically immutable after startup
 	// since no new broker can be constructed after startup
-	private final List<Socket>         brokerConnections = new LinkedList<>(); // CHECK is this needed?
+	private final List<Socket> brokerConnections = new LinkedList<>(); // CHECK is this needed?
 	private final List<ConnectionInfo> brokerCI = new LinkedList<>();
 
 	private final ServerSocket clientRequestSocket;
@@ -53,16 +53,15 @@ public final class Broker implements Runnable, AutoCloseable {
 	 *
 	 * @param postDao the ITopicDAO object responsible for this Broker's Posts.
 	 * @param clientRequestSocket the unbound ServerSocket that will listen for incoming requests
-	 *                            from Clients
+	 * 		from Clients
 	 * @param brokerRequestSocket the unbound ServerSocket that will listen for incoming requests
-	 *                            from Brokers
+	 * 		from Brokers
 	 *
 	 * @throws IOException if the server could not be started
-	 *
 	 * @see ITopicDAO
 	 */
 	public Broker(ITopicDAO postDao, ServerSocket clientRequestSocket,
-				  ServerSocket brokerRequestSocket) throws IOException {
+			ServerSocket brokerRequestSocket) throws IOException {
 		btm = new BrokerTopicManager(postDao);
 		btm.forEach(brokerTopic -> brokerTopic.subscribe(new BrokerTopicSubscriber(brokerTopic)));
 
@@ -81,27 +80,24 @@ public final class Broker implements Runnable, AutoCloseable {
 	/**
 	 * Create a non-leader broker and connect it to the server network.
 	 *
-	 * @param postDao             the ITopicDAO object responsible for this Broker's Posts.
+	 * @param postDao the ITopicDAO object responsible for this Broker's Posts.
 	 * @param clientRequestSocket the unbound ServerSocket that will listen for incoming requests
-	 *                            from Clients
+	 * 		from Clients
 	 * @param brokerRequestSocket the unbound ServerSocket that will listen for incoming requests
-	 *                            from Brokers
-	 * @param leaderIP            the IP of the leader broker
-	 * @param leaderPort          the port of the leader broker
+	 * 		from Brokers
+	 * @param leaderIP the IP of the leader broker
+	 * @param leaderPort the port of the leader broker
 	 *
 	 * @throws IOException if this server could not be started or the connection to the leader
-	 * 					   broker could not be established.
-	 *
+	 * 		broker could not be established.
 	 * @see ITopicDAO
 	 */
 	public Broker(ITopicDAO postDao, ServerSocket clientRequestSocket,
-				  ServerSocket brokerRequestSocket, String leaderIP, int leaderPort)
-			throws IOException {
+			ServerSocket brokerRequestSocket, String leaderIP, int leaderPort) throws IOException {
 		this(postDao, clientRequestSocket, brokerRequestSocket);
 
 		final Socket leaderConnection = new Socket(leaderIP, leaderPort); // closes at Broker#close
-		final ObjectOutputStream oos = new ObjectOutputStream(
-				leaderConnection.getOutputStream());
+		final ObjectOutputStream oos = new ObjectOutputStream(leaderConnection.getOutputStream());
 
 		oos.writeObject(ConnectionInfo.forServerSocket(clientRequestSocket));
 		brokerConnections.add(leaderConnection);
@@ -150,9 +146,9 @@ public final class Broker implements Runnable, AutoCloseable {
 		try {
 			btm.close();
 
-			for (final Socket brokerSocket : brokerConnections)
+			for (final Socket brokerSocket : brokerConnections) {
 				brokerSocket.close();
-
+			}
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
@@ -196,8 +192,9 @@ public final class Broker implements Runnable, AutoCloseable {
 					oos.writeBoolean(success);
 					oos.flush();
 
-					if (success)
+					if (success) {
 						new PullThread(ois, getTopic(topicName)).run();
+					}
 
 					socket.close();
 					break;
@@ -205,7 +202,7 @@ public final class Broker implements Runnable, AutoCloseable {
 
 				case INITIALISE_CONSUMER: {
 					final TopicToken topicToken = (TopicToken) message.getValue();
-					topicName  = topicToken.getName();
+					topicName = topicToken.getName();
 					LG.sout(start, message.getType(), topicName);
 					LG.in();
 
@@ -257,8 +254,9 @@ public final class Broker implements Runnable, AutoCloseable {
 					oos.writeBoolean(success);
 					oos.flush();
 
-					if (success)
+					if (success) {
 						subscribeToTopic(topicName);
+					}
 
 					socket.close();
 					break;
@@ -280,14 +278,13 @@ public final class Broker implements Runnable, AutoCloseable {
 
 				default: {
 					throw new IllegalArgumentException(
-					        "You forgot to put a case for the new Message enum");
+							"You forgot to put a case for the new Message enum");
 				}
 				}
 
 				LG.out();
 				final String end = "/%s '%s'";
 				LG.sout(end, message.getType(), topicName);
-
 			} catch (final IOException | ClassNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -336,7 +333,7 @@ public final class Broker implements Runnable, AutoCloseable {
 		}
 
 		private void getPostsFromTopicSince(String topicName, long idOfLast, List<PostInfo> piList,
-											Map<? super Long, Packet[]> packetMap) {
+				Map<? super Long, Packet[]> packetMap) {
 			btm.getPostsFromTopicSince(topicName, idOfLast, piList, packetMap);
 		}
 
@@ -349,13 +346,14 @@ public final class Broker implements Runnable, AutoCloseable {
 		private ConnectionInfo getAssignedBroker(String topicName) {
 			final int brokerCount = brokerCI.size();
 
-			final int hash        = AbstractTopic.hashForTopic(topicName);
+			final int hash = AbstractTopic.hashForTopic(topicName);
 			final int brokerIndex = Math.abs(hash % (brokerCount + 1));
 
-			// last index (out of range normally) => this broker is responsible for the topic
-			// this works because the default broker is the only broker that processes such requests.
-			if (brokerIndex == brokerCount)
+			// last index (out of range normally) => this broker is responsible for the topic. this
+			// works because the default broker is the only broker that processes such requests.
+			if (brokerIndex == brokerCount) {
 				return ConnectionInfo.forServerSocket(clientRequestSocket);
+			}
 
 			// else send the broker from the other connections
 			return brokerCI.get(brokerIndex);
@@ -384,7 +382,6 @@ public final class Broker implements Runnable, AutoCloseable {
 
 				LG.sout("brokerCIForClient=%s", brokerCIForClient);
 				brokerCI.add(brokerCIForClient);
-
 			} catch (ClassNotFoundException | IOException e) {
 				e.printStackTrace();
 				try {

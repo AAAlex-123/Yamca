@@ -17,59 +17,59 @@ package eventDeliverySystem.client;
  */
 public interface UserListener {
 
-    /**
-     * Called when a Message has been sent.
-     *
-     * @param e the UserEvent associated with that event
-     */
-    void onMessageSent(UserEvent e);
+	/**
+	 * Called when a Message has been sent.
+	 *
+	 * @param e the UserEvent associated with that event
+	 */
+	void onMessageSent(UserEvent e);
 
-    /**
-     * Called when a Message has been received.
-     *
-     * @param e the UserEvent associated with that event
-     */
-    void onMessageReceived(UserEvent e);
+	/**
+	 * Called when a Message has been received.
+	 *
+	 * @param e the UserEvent associated with that event
+	 */
+	void onMessageReceived(UserEvent e);
 
-    /**
-     * Called when a Topic has been created.
-     *
-     * @param e the UserEvent associated with that event
-     */
-    void onTopicCreated(UserEvent e);
+	/**
+	 * Called when a Topic has been created.
+	 *
+	 * @param e the UserEvent associated with that event
+	 */
+	void onTopicCreated(UserEvent e);
 
-    /**
-     * Called when a Topic has been deleted locally following a deletion from the server.
-     *
-     * @param e the UserEvent associated with that event
-     */
-    void onTopicDeleted(UserEvent e);
+	/**
+	 * Called when a Topic has been deleted locally following a deletion from the server.
+	 *
+	 * @param e the UserEvent associated with that event
+	 */
+	void onTopicDeleted(UserEvent e);
 
-    /**
-     * Called when a Topic has been deleted from the server.
-     *
-     * @param e the UserEvent associated with that event
-     */
-    void onServerTopicDeleted(UserEvent e);
+	/**
+	 * Called when a Topic has been deleted from the server.
+	 *
+	 * @param e the UserEvent associated with that event
+	 */
+	void onServerTopicDeleted(UserEvent e);
 
-    /**
-     * Called when a Topic has been listened to.
-     *
-     * @param e the UserEvent associated with that event
-     */
-    void onTopicListened(UserEvent e);
+	/**
+	 * Called when a Topic has been listened to.
+	 *
+	 * @param e the UserEvent associated with that event
+	 */
+	void onTopicListened(UserEvent e);
 
-    /**
-     * Called when a Topic has been loaded for the first time.
-     *
-     * @param e the UserEvent associated with that event
-     */
-    void onTopicLoaded(UserEvent e);
+	/**
+	 * Called when a Topic has been loaded for the first time.
+	 *
+	 * @param e the UserEvent associated with that event
+	 */
+	void onTopicLoaded(UserEvent e);
 
-    /**
-     * Called when a Topic is no longer being listened to.
-     *
-     * @param e the UserEvent associated with that event
-     */
-    void onTopicListenStopped(UserEvent e);
+	/**
+	 * Called when a Topic is no longer being listened to.
+	 *
+	 * @param e the UserEvent associated with that event
+	 */
+	void onTopicListenStopped(UserEvent e);
 }

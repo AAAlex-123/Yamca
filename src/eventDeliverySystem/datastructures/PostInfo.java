@@ -7,7 +7,6 @@ import java.io.Serializable;
  *
  * @author Alex Mandelias
  * @author Dimitris Tsirmpas
- *
  * @see Post
  */
 public final class PostInfo implements Serializable {
@@ -16,15 +15,15 @@ public final class PostInfo implements Serializable {
 
 	private final String posterName;
 	private final String fileExtension;
-	private final long   id;
+	private final long id;
 
 	/**
 	 * Constructs a new PostInfo that holds information associated with a Post.
 	 *
-	 * @param posterName    the unique name of the Post's poster
-	 * @param fileExtension the extension of the associated Post's file,
-	 *                      '{@code ~txt}' for plain-text messages
-	 * @param id            the unique id of the Post
+	 * @param posterName the unique name of the Post's poster
+	 * @param fileExtension the extension of the associated Post's file, '{@code ~txt}' for
+	 * 		plain-text messages
+	 * @param id the unique id of the Post
 	 */
 	public PostInfo(String posterName, String fileExtension, long id) {
 		this.posterName = posterName;
@@ -62,6 +61,6 @@ public final class PostInfo implements Serializable {
 	@Override
 	public String toString() {
 		return String.format("PostInfo [posterName=%s, fileExtension=%s, id=%s]", posterName,
-		        fileExtension, id);
+				fileExtension, id);
 	}
 }

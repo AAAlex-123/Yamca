@@ -1,10 +1,5 @@
 package eventDeliverySystem.filesystem;
 
-import eventDeliverySystem.dao.ITopicDAO;
-import eventDeliverySystem.datastructures.AbstractTopic;
-import eventDeliverySystem.datastructures.Post;
-import eventDeliverySystem.datastructures.PostInfo;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -22,6 +17,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import eventDeliverySystem.dao.ITopicDAO;
+import eventDeliverySystem.datastructures.AbstractTopic;
+import eventDeliverySystem.datastructures.Post;
+import eventDeliverySystem.datastructures.PostInfo;
+
 /**
  * An implementation of the {@code ITopicDAO} interface which saves Topics in directories in the
  * machine's file system.
@@ -30,11 +30,11 @@ import java.util.stream.Stream;
  */
 public final class TopicFileSystem implements ITopicDAO {
 
-	private static final Pattern PATTERN = Pattern.compile(
-			"(?<postId>-?\\d+)-(?<posterName>\\w+)\\.(?<extension>.*)");
-	private static final String  FORMAT  = "%d-%s.%s";
+	private static final Pattern PATTERN =
+			Pattern.compile("(?<postId>-?\\d+)-(?<posterName>\\w+)\\.(?<extension>.*)");
+	private static final String FORMAT = "%d-%s.%s";
 
-	private static final String HEAD                 = "HEAD";
+	private static final String HEAD = "HEAD";
 	private static final String TOPIC_META_EXTENSION = ".meta";
 
 	private final Path topicsRootDirectory;
@@ -43,15 +43,15 @@ public final class TopicFileSystem implements ITopicDAO {
 	 * Constructs a new Topic File System for a given root directory.
 	 *
 	 * @param topicsRootDirectory the root directory of the new file system whose subdirectories
-	 *                            correspond to different Topics
+	 * 		correspond to different Topics
 	 *
 	 * @throws FileSystemException if the path given does not correspond to an existing directory
 	 */
 	public TopicFileSystem(Path topicsRootDirectory) throws FileSystemException {
 		if (!Files.exists(topicsRootDirectory)) {
-			throw new FileSystemException(
-					"Root directory for Topics does not exist",
-					new FileNotFoundException("Directory " + topicsRootDirectory + " does not exist"),
+			throw new FileSystemException("Root directory for Topics does not exist",
+					new FileNotFoundException(
+							"Directory " + topicsRootDirectory + " does not exist"),
 					topicsRootDirectory);
 		}
 
@@ -64,7 +64,8 @@ public final class TopicFileSystem implements ITopicDAO {
 		try {
 			Files.createDirectory(topicDirectory);
 		} catch (IOException e) {
-			throw new FileSystemException("An I/O error occurred when creating Topic " + topicName, e, topicDirectory);
+			throw new FileSystemException("An I/O error occurred when creating Topic " + topicName,
+					e, topicDirectory);
 		}
 
 		final Path head = getHead(topicName);
@@ -77,14 +78,15 @@ public final class TopicFileSystem implements ITopicDAO {
 
 		Path currentPath = topicDirectory;
 		try (Stream<Path> directoryStream = Files.list(currentPath)) {
-			for (Iterator<Path> it = directoryStream.iterator(); it.hasNext();) {
+			for (Iterator<Path> it = directoryStream.iterator(); it.hasNext(); ) {
 				currentPath = it.next();
 				Files.delete(currentPath);
 			}
 
 			Files.delete(topicDirectory);
 		} catch (IOException e) {
-			throw new FileSystemException("An I/O error occurred when deleting Topic " + topicName, e, currentPath);
+			throw new FileSystemException("An I/O error occurred when deleting Topic " + topicName,
+					e, currentPath);
 		}
 	}
 
@@ -99,8 +101,9 @@ public final class TopicFileSystem implements ITopicDAO {
 	public Collection<AbstractTopic> readAllTopics() throws FileSystemException {
 		final Set<AbstractTopic> topics = new HashSet<>();
 
-		for (Iterator<String> it = getTopicNames().iterator(); it.hasNext();)
+		for (Iterator<String> it = getTopicNames().iterator(); it.hasNext(); ) {
 			topics.add(readTopic(it.next()));
+		}
 
 		return topics;
 	}
@@ -121,7 +124,7 @@ public final class TopicFileSystem implements ITopicDAO {
 		final String fileName = TopicFileSystem.getFileNameFromPostInfo(post.getPostInfo());
 
 		final Path topicDirectory = resolveRoot(topicName);
-		final Path pathForPost    = TopicFileSystem.resolve(topicDirectory, fileName);
+		final Path pathForPost = TopicFileSystem.resolve(topicDirectory, fileName);
 
 		TopicFileSystem.create(pathForPost);
 
@@ -134,20 +137,20 @@ public final class TopicFileSystem implements ITopicDAO {
 	private void writePointerForPost(Post post, String topicName) throws FileSystemException {
 		final String fileName = TopicFileSystem.getFileNameFromPostInfo(post.getPostInfo());
 
-		final Path   topicDirectory    = resolveRoot(topicName);
-		final String metaFileName      = fileName + TopicFileSystem.TOPIC_META_EXTENSION;
-		final Path   pointerToNextPost = TopicFileSystem.resolve(topicDirectory, metaFileName);
+		final Path topicDirectory = resolveRoot(topicName);
+		final String metaFileName = fileName + TopicFileSystem.TOPIC_META_EXTENSION;
+		final Path pointerToNextPost = TopicFileSystem.resolve(topicDirectory, metaFileName);
 		TopicFileSystem.create(pointerToNextPost);
 
-		final Path   head         = getHead(topicName);
+		final Path head = getHead(topicName);
 		final byte[] headContents = TopicFileSystem.read(head);
 		TopicFileSystem.write(pointerToNextPost, headContents);
 	}
 
 	private void updateHeadForPost(Path fileForPost, String topicName) throws FileSystemException {
-		final Path   head            = getHead(topicName);
-		final byte[] newHeadContents = fileForPost.getFileName().toString().getBytes(
-				StandardCharsets.UTF_8);
+		final Path head = getHead(topicName);
+		final byte[] newHeadContents =
+				fileForPost.getFileName().toString().getBytes(StandardCharsets.UTF_8);
 		TopicFileSystem.write(head, newHeadContents);
 	}
 
@@ -160,11 +163,11 @@ public final class TopicFileSystem implements ITopicDAO {
 
 	private Stream<String> getTopicNames() throws FileSystemException {
 		try {
-			return Files.list(topicsRootDirectory)
-						.filter(Files::isDirectory)
-						.map(path -> path.getFileName().toString());
+			return Files.list(topicsRootDirectory).filter(Files::isDirectory)
+			            .map(path -> path.getFileName().toString());
 		} catch (IOException e) {
-			throw new FileSystemException("An I/O error occurred when retrieving the Topics", e, topicsRootDirectory);
+			throw new FileSystemException("An I/O error occurred when retrieving the Topics", e,
+					topicsRootDirectory);
 		}
 	}
 
@@ -172,11 +175,11 @@ public final class TopicFileSystem implements ITopicDAO {
 		final List<Post> loadedPosts = new LinkedList<>();
 
 		final Path latestPost = getFirstPost(topicName); // from latest to earliest
-		for (Path postFile = latestPost; postFile != null; postFile = getNextFile(postFile,
-																				 topicName)) {
-			final String   filename   = postFile.getFileName().toString();
-			final PostInfo postInfo   = TopicFileSystem.getPostInfoFromFileName(filename);
-			final Post     loadedPost = TopicFileSystem.readPost(postInfo, postFile);
+		for (Path postFile = latestPost; postFile != null;
+				postFile = getNextFile(postFile, topicName)) {
+			final String filename = postFile.getFileName().toString();
+			final PostInfo postInfo = TopicFileSystem.getPostInfoFromFileName(filename);
+			final Post loadedPost = TopicFileSystem.readPost(postInfo, postFile);
 			loadedPosts.add(loadedPost);
 		}
 
@@ -187,29 +190,31 @@ public final class TopicFileSystem implements ITopicDAO {
 
 	// returns null if topic has no posts
 	private Path getFirstPost(String topicName) throws FileSystemException {
-		final Path   head         = getHead(topicName);
+		final Path head = getHead(topicName);
 		final byte[] headContents = TopicFileSystem.read(head);
 
-		if (headContents.length == 0)
+		if (headContents.length == 0) {
 			return null;
+		}
 
-		final Path   topicDirectory = resolveRoot(topicName);
-		final String firstPostFile  = new String(headContents, StandardCharsets.UTF_8);
+		final Path topicDirectory = resolveRoot(topicName);
+		final String firstPostFile = new String(headContents, StandardCharsets.UTF_8);
 		return TopicFileSystem.resolve(topicDirectory, firstPostFile);
 	}
 
 	// returns null if there is no next post
 	private Path getNextFile(Path postFile, String topicName) throws FileSystemException {
-		final Path pointerToNextPost = new File(postFile + TopicFileSystem.TOPIC_META_EXTENSION)
-				.toPath();
+		final Path pointerToNextPost =
+				new File(postFile + TopicFileSystem.TOPIC_META_EXTENSION).toPath();
 
 		final byte[] pointerToNextPostContents = TopicFileSystem.read(pointerToNextPost);
 
-		if (pointerToNextPostContents.length == 0)
+		if (pointerToNextPostContents.length == 0) {
 			return null;
+		}
 
-		final Path   topicDirectory = resolveRoot(topicName);
-		final String fileName       = new String(pointerToNextPostContents, StandardCharsets.UTF_8);
+		final Path topicDirectory = resolveRoot(topicName);
+		final String fileName = new String(pointerToNextPostContents, StandardCharsets.UTF_8);
 		return TopicFileSystem.resolve(topicDirectory, fileName);
 	}
 
@@ -224,7 +229,8 @@ public final class TopicFileSystem implements ITopicDAO {
 		try {
 			Files.createFile(pathForPost);
 		} catch (IOException e) {
-			throw new FileSystemException("An I/O error occurred when creating a File", e, pathForPost);
+			throw new FileSystemException("An I/O error occurred when creating a File", e,
+					pathForPost);
 		}
 	}
 
@@ -232,7 +238,8 @@ public final class TopicFileSystem implements ITopicDAO {
 		try {
 			return Files.readAllBytes(head);
 		} catch (IOException e) {
-			throw new FileSystemException("An I/O error occurred when reading from a File", e, head);
+			throw new FileSystemException("An I/O error occurred when reading from a File", e,
+					head);
 		}
 	}
 
@@ -240,15 +247,16 @@ public final class TopicFileSystem implements ITopicDAO {
 		try {
 			Files.write(pointerToNextPost, data);
 		} catch (IOException e) {
-			throw new FileSystemException("An I/O error occurred when writing to a File", e, pointerToNextPost);
+			throw new FileSystemException("An I/O error occurred when writing to a File", e,
+					pointerToNextPost);
 		}
 	}
 
 	// ==================== POST INFO ====================
 
 	private static String getFileNameFromPostInfo(PostInfo postInfo) {
-		final long   postId        = postInfo.getId();
-		final String posterId      = postInfo.getPosterName();
+		final long postId = postInfo.getId();
+		final String posterId = postInfo.getPosterName();
 		final String fileExtension = postInfo.getFileExtension();
 
 		return String.format(TopicFileSystem.FORMAT, postId, posterId, fileExtension);
@@ -257,11 +265,12 @@ public final class TopicFileSystem implements ITopicDAO {
 	private static PostInfo getPostInfoFromFileName(String fileName) {
 		final Matcher m = TopicFileSystem.PATTERN.matcher(fileName);
 
-		if (!m.matches())
+		if (!m.matches()) {
 			throw new IllegalArgumentException("Bad filename: " + fileName);
+		}
 
-		final long   postId        = Long.parseLong(m.group("postId"));
-		final String posterId      = m.group("posterName");
+		final long postId = Long.parseLong(m.group("postId"));
+		final String posterId = m.group("posterName");
 		final String fileExtension = m.group("extension");
 
 		return new PostInfo(posterId, fileExtension, postId);

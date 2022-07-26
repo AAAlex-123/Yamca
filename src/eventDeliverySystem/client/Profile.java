@@ -19,8 +19,8 @@ import eventDeliverySystem.datastructures.Post;
  */
 final class Profile {
 
-	private final String               name;
-	private final Map<String, UserTopic>   topics = new HashMap<>();
+	private final String name;
+	private final Map<String, UserTopic> topics = new HashMap<>();
 	private final Map<String, Integer> unreadTopics = new HashMap<>();
 
 	/**
@@ -66,12 +66,13 @@ final class Profile {
 	 *
 	 * @param abstractTopic the Topic
 	 *
-	 * @throws NullPointerException     if {@code abstractTopic == null}
+	 * @throws NullPointerException if {@code abstractTopic == null}
 	 * @throws IllegalArgumentException if a User Topic with the same name already exists
 	 */
 	void addTopic(AbstractTopic abstractTopic) {
-		if (abstractTopic == null)
+		if (abstractTopic == null) {
 			throw new NullPointerException("Topic can't be null");
+		}
 
 		addTopic(new UserTopic(abstractTopic));
 	}
@@ -81,12 +82,13 @@ final class Profile {
 	 *
 	 * @param userTopic the Topic
 	 *
-	 * @throws NullPointerException     if {@code userTopic == null}
+	 * @throws NullPointerException if {@code userTopic == null}
 	 * @throws IllegalArgumentException if a User Topic with the same name already exists
 	 */
 	private void addTopic(UserTopic userTopic) {
-		if (userTopic == null)
+		if (userTopic == null) {
 			throw new NullPointerException("Topic can't be null");
+		}
 
 		final String topicName = userTopic.getName();
 
@@ -100,7 +102,7 @@ final class Profile {
 	 * Updates a User Topic of this Profile with new Posts.
 	 *
 	 * @param topicName the name of the User Topic to update
-	 * @param posts     the new Posts to post to the Topic
+	 * @param posts the new Posts to post to the Topic
 	 *
 	 * @throws NoSuchElementException if no User Topic with the given name exists
 	 */
@@ -172,12 +174,14 @@ final class Profile {
 	}
 
 	private void assertTopicExists(String topicName) throws NoSuchElementException {
-		if (!topics.containsKey(topicName))
+		if (!topics.containsKey(topicName)) {
 			throw new NoSuchElementException("No Topic with name " + topicName + " found");
+		}
 	}
 
 	private void assertTopicDoesNotExist(String topicName) throws IllegalArgumentException {
-		if (topics.containsKey(topicName))
+		if (topics.containsKey(topicName)) {
 			throw new NoSuchElementException("Topic with name " + topicName + " already exists");
+		}
 	}
 }

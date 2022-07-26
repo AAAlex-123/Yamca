@@ -42,8 +42,10 @@ final class Client {
 	        + LINE_SEP
 	        + "Where:" + LINE_SEP
 	        + "\t<ip>\t\tthe ip of the server" + LINE_SEP
-	        + "\t<port>\t\tthe port the server listens to (See 'Client Port' in the server console)" + LINE_SEP
-	        + "\t<path>\t\tthe file with the configuration\t<user_dir>\tthe directory in the file system to store the data";
+	        + "\t<port>\t\tthe port the server listens to (See 'Client Port' in the server console)"
+	                                    + LINE_SEP
+	        + "\t<path>\t\tthe file with the configuration\t<user_dir>\tthe directory in the file"
+	                                    + " system to store the data";
 
 	private Client() {}
 
@@ -77,20 +79,19 @@ final class Client {
 
 		if ("-f".equals(args[ARG_F_FLAG])) {
 			Properties props = new Properties();
-			try (FileInputStream fis = new FileInputStream(args[ARG_PATH])){
+			try (FileInputStream fis = new FileInputStream(args[ARG_PATH])) {
 				props.load(fis);
 			} catch (FileNotFoundException e) {
 				LG.err("Could not find configuration file: %s", args[ARG_PATH]);
 				return;
 			} catch (IOException e) {
 				LG.err("Unexpected Error while reading configuration from file: %s. Please try "
-					   + "manually inputting ip and port.", args[ARG_PATH]);
+				       + "manually inputting ip and port.", args[ARG_PATH]);
 				return;
 			}
 
 			ip = props.getProperty("ip");
 			stringPort = props.getProperty("port");
-
 		} else {
 			ip = args[ARG_IP];
 			stringPort = args[ARG_PORT];
@@ -99,12 +100,11 @@ final class Client {
 		final int port;
 		try {
 			port = Integer.parseInt(stringPort);
-			if (port <= 0 || port > Client.MAX_PORT_NUMBER)
+			if (port <= 0 || port > Client.MAX_PORT_NUMBER) {
 				throw new IllegalArgumentException();
-
+			}
 		} catch (final NumberFormatException e) {
 			throw new IllegalArgumentException(e);
-
 		} catch (IllegalArgumentException e) {
 			LG.err("Invalid port number: %s", stringPort);
 			return;
@@ -126,7 +126,7 @@ final class Client {
 			ui = new CrappyUserUI(existing, name, ip, port, profileDao);
 		} catch (final IOException e) {
 			LG.err("There was an I/O error either while interacting with the file system or"
-				   + " connecting to the server");
+			       + " connecting to the server");
 			e.printStackTrace();
 			return;
 		}
