@@ -7,10 +7,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Properties;
 
-import eventDeliverySystem.dao.IProfileDAO;
-import eventDeliverySystem.filesystem.FileSystemException;
-import eventDeliverySystem.filesystem.ProfileFileSystem;
-import eventDeliverySystem.util.LG;
+import eventdeliverysystem.dao.IProfileDAO;
+import eventdeliverysystem.filesystem.FileSystemException;
+import eventdeliverysystem.filesystem.ProfileFileSystem;
+import eventdeliverysystem.util.LG;
 
 /**
  * Runs a Client which can be configured by command-line arguments.

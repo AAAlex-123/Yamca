@@ -9,11 +9,11 @@ import java.nio.file.Path;
 import java.util.Properties;
 import java.util.concurrent.ThreadLocalRandom;
 
-import eventDeliverySystem.dao.ITopicDAO;
-import eventDeliverySystem.filesystem.FileSystemException;
-import eventDeliverySystem.filesystem.TopicFileSystem;
-import eventDeliverySystem.server.Broker;
-import eventDeliverySystem.util.LG;
+import eventdeliverysystem.dao.ITopicDAO;
+import eventdeliverysystem.filesystem.FileSystemException;
+import eventdeliverysystem.filesystem.TopicFileSystem;
+import eventdeliverysystem.server.Broker;
+import eventdeliverysystem.util.LG;
 
 /**
  * Runs a Server which can be configured by command-line arguments.

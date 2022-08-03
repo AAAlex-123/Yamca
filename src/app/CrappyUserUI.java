@@ -14,11 +14,11 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 
-import eventDeliverySystem.client.User;
-import eventDeliverySystem.client.UserAdapter;
-import eventDeliverySystem.client.UserEvent;
-import eventDeliverySystem.dao.IProfileDAO;
-import eventDeliverySystem.datastructures.Post;
+import eventdeliverysystem.client.User;
+import eventdeliverysystem.client.UserAdapter;
+import eventdeliverysystem.client.UserEvent;
+import eventdeliverysystem.dao.IProfileDAO;
+import eventdeliverysystem.datastructures.Post;
 
 /**
  * Imitates the functionality of the android app.
