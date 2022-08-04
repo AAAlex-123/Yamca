@@ -127,6 +127,6 @@ public final class PushThread extends Thread {
 		}
 
 		LG.out();
-		LG.sout("/%s#run()", getName());
+		LG.sout("#%s#run()", getName());
 	}
 }

@@ -41,7 +41,7 @@ public final class Broker implements Runnable, AutoCloseable {
 
 	// no need to synchronise because these practically immutable after startup
 	// since no new broker can be constructed after startup
-	private final List<Socket> brokerConnections = new LinkedList<>(); // CHECK is this needed?
+	private final List<Socket> brokerConnections = new LinkedList<>();
 	private final List<ConnectionInfo> brokerCI = new LinkedList<>();
 
 	private final ServerSocket clientRequestSocket;
@@ -96,6 +96,7 @@ public final class Broker implements Runnable, AutoCloseable {
 			ServerSocket brokerRequestSocket, String leaderIP, int leaderPort) throws IOException {
 		this(postDao, clientRequestSocket, brokerRequestSocket);
 
+		@SuppressWarnings({ "SocketOpenedButNotSafelyClosed", "resource" })
 		final Socket leaderConnection = new Socket(leaderIP, leaderPort); // closes at Broker#close
 		final ObjectOutputStream oos = new ObjectOutputStream(leaderConnection.getOutputStream());
 
@@ -111,37 +112,40 @@ public final class Broker implements Runnable, AutoCloseable {
 			LG.sout("ClientRequestThread#run()");
 			try {
 				while (true) {
-					final Socket socket = clientRequestSocket.accept(); // closes at Broker#close
+					@SuppressWarnings("SocketOpenedButNotSafelyClosed")
+					final Socket socket = clientRequestSocket.accept(); // closes at connection
+																		// termination
 					new ClientRequestHandler(socket).start();
 				}
 			} catch (final IOException e) {
 				e.printStackTrace();
 			}
-			LG.sout("/ClientRequestThread#run()");
+			LG.sout("#ClientRequestThread#run()");
 		}, "Client Request Thread");
 
 		Thread brokerRequestThread = new Thread(() -> {
 			LG.sout("BrokerRequestThread#run()");
 			try {
 				while (true) {
+					@SuppressWarnings("SocketOpenedButNotSafelyClosed")
 					final Socket socket = brokerRequestSocket.accept(); // closes at Broker#close
 					new BrokerRequestHandler(socket).start();
 				}
 			} catch (final IOException e) {
 				e.printStackTrace();
 			}
-			LG.sout("/BrokerRequestThread#run()");
+			LG.sout("#BrokerRequestThread#run()");
 		}, "Broker Request Thread");
 
 		clientRequestThread.start();
 		brokerRequestThread.start();
 
-		LG.sout("/Broker#run");
+		LG.sout("#Broker#run");
 	}
 
 	/** Closes all connections to this broker */
 	@Override
-	public synchronized void close() {
+	public void close() {
 		LG.sout("Broker#close()");
 		try {
 			btm.close();
@@ -168,7 +172,7 @@ public final class Broker implements Runnable, AutoCloseable {
 		@Override
 		public void run() {
 
-			LG.ssocket("Starting ClientRequestHandler for Socket", socket);
+			LG.sout("Starting ClientRequestHandler for Socket: %s", socket);
 			LG.in();
 
 			try {
@@ -283,14 +287,14 @@ public final class Broker implements Runnable, AutoCloseable {
 				}
 
 				LG.out();
-				final String end = "/%s '%s'";
+				final String end = "#%s '%s'";
 				LG.sout(end, message.getType(), topicName);
 			} catch (final IOException | ClassNotFoundException e) {
 				e.printStackTrace();
 			}
 
 			LG.out();
-			LG.ssocket("Finishing ClientRequestHandler for Socket", socket);
+			LG.sout("Finishing ClientRequestHandler for Socket: %s", socket);
 		}
 
 		private boolean topicExists(String topicName) {
@@ -372,7 +376,7 @@ public final class Broker implements Runnable, AutoCloseable {
 		@Override
 		public void run() {
 
-			LG.ssocket("Starting BrokerRequestHandler for Socket", socket);
+			LG.sout("Starting BrokerRequestHandler for Socket: %s", socket);
 
 			try {
 				final ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());

@@ -55,6 +55,9 @@ final class Client {
 	 * @param args see {@code Server#Usage} for more information or run with no args
 	 */
 	public static void main(String[] args) {
+		LG.setOut(System.out);
+		LG.setErr(System.err);
+
 		LG.args(args);
 
 		if (args.length != 5) {
@@ -125,7 +128,7 @@ final class Client {
 			boolean existing = "-l".equals(type);
 			ui = new CrappyUserUI(existing, name, ip, port, profileDao);
 		} catch (final IOException e) {
-			LG.err("There was an I/O error either while interacting with the file system or"
+			LG.err("There was an IO error either while interacting with the file system or"
 			       + " connecting to the server");
 			e.printStackTrace();
 			return;

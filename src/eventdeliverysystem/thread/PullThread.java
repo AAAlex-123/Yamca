@@ -95,6 +95,6 @@ public final class PullThread extends Thread {
 			}
 		}
 
-		LG.sout("/%s#run()", getName());
+		LG.sout("#%s#run()", getName());
 	}
 }

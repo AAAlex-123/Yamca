@@ -22,6 +22,8 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	/** Constant to be used when no post exists and an ID is needed */
 	public static final long FETCH_ALL_POSTS = -1L;
 
+	private final Object postLock = new Object();
+
 	/**
 	 * Creates a simple Topic that contains the given Posts and can be posted to. This method is
 	 * intended to be used for reading a Topic from a ITopicDAO object and then using a copy
@@ -182,7 +184,7 @@ public abstract class AbstractTopic implements Iterable<Post> {
 	}
 
 	@Override
-	public String toString() {
+	public final String toString() {
 		return String.format("AbstractTopic[name=%s, subCount=%d]", name, subscribers.size());
 	}
 

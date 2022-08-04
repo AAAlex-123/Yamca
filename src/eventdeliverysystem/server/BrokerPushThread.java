@@ -24,12 +24,14 @@ import eventdeliverysystem.util.LG;
  */
 final class BrokerPushThread extends Thread implements Subscriber {
 
+	private static final long TIMEOUT_MILLIS = 10_000L;
+
 	private static final long NO_CURRENT_POST_ID = -1L;
 	private final Deque<PostInfo> postInfoList = new LinkedList<>();
 	private final Map<Long, List<Packet>> buffers = new HashMap<>();
 	private final Queue<Object> queue = new LinkedList<>();
+	private final AbstractTopic topic;
 	private final ObjectOutputStream oos;
-	private final Object monitor = new Object();
 	private long currentPostId = BrokerPushThread.NO_CURRENT_POST_ID;
 
 	/**
@@ -41,37 +43,32 @@ final class BrokerPushThread extends Thread implements Subscriber {
 	 */
 	BrokerPushThread(AbstractTopic topic, ObjectOutputStream stream) {
 		super("BrokerPushThread-" + topic.getName());
-		topic.subscribe(this);
+		this.topic = topic;
 		oos = stream;
 	}
 
 	@Override
 	public void run() {
+		topic.subscribe(this);
+
 		while (true) {
-			boolean isEmpty;
-			synchronized (queue) {
-				isEmpty = queue.isEmpty();
-			}
-
-			while (isEmpty) {
-				try {
-					synchronized (monitor) {
-						monitor.wait();
-					}
-				} catch (final InterruptedException e) {
-					try {
-						oos.close();
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					}
-					Thread.currentThread().interrupt();
-				}
-
+			try {
 				synchronized (queue) {
-					isEmpty = queue.isEmpty();
+					while (queue.isEmpty()) {
+						queue.wait(BrokerPushThread.TIMEOUT_MILLIS, 0);
+					}
 				}
+
+			} catch (final InterruptedException e) {
+				try {
+					oos.close();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+				Thread.currentThread().interrupt();
 			}
 
+			boolean queueNotEmpty;
 			do {
 				try {
 					synchronized (queue) {
@@ -82,9 +79,9 @@ final class BrokerPushThread extends Thread implements Subscriber {
 				}
 
 				synchronized (queue) {
-					isEmpty = queue.isEmpty();
+					queueNotEmpty = !queue.isEmpty();
 				}
-			} while (!isEmpty);
+			} while (queueNotEmpty);
 		}
 	}
 
@@ -104,8 +101,8 @@ final class BrokerPushThread extends Thread implements Subscriber {
 			buffers.put(postInfo.getId(), new LinkedList<>());
 		}
 
-		synchronized (monitor) {
-			monitor.notifyAll();
+		synchronized (queue) {
+			queue.notifyAll();
 		}
 	}
 
@@ -158,8 +155,8 @@ final class BrokerPushThread extends Thread implements Subscriber {
 			}
 		}
 
-		synchronized (monitor) {
-			monitor.notifyAll();
+		synchronized (queue) {
+			queue.notifyAll();
 		}
 	}
 

@@ -58,6 +58,9 @@ final class Server {
 	 * @param args see {@code Server#Usage} for more information or run with no args
 	 */
 	public static void main(String[] args) {
+		LG.setOut(System.out);
+		LG.setErr(System.err);
+
 		LG.args(args);
 
 		switch (args.length) {

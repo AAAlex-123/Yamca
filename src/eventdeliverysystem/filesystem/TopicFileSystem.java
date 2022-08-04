@@ -64,7 +64,7 @@ public final class TopicFileSystem implements ITopicDAO {
 		try {
 			Files.createDirectory(topicDirectory);
 		} catch (IOException e) {
-			throw new FileSystemException("An I/O error occurred when creating Topic " + topicName,
+			throw new FileSystemException("An IO error occurred when creating Topic " + topicName,
 					e, topicDirectory);
 		}
 
@@ -85,7 +85,7 @@ public final class TopicFileSystem implements ITopicDAO {
 
 			Files.delete(topicDirectory);
 		} catch (IOException e) {
-			throw new FileSystemException("An I/O error occurred when deleting Topic " + topicName,
+			throw new FileSystemException("An IO error occurred when deleting Topic " + topicName,
 					e, currentPath);
 		}
 	}
@@ -166,7 +166,7 @@ public final class TopicFileSystem implements ITopicDAO {
 			return Files.list(topicsRootDirectory).filter(Files::isDirectory)
 			            .map(path -> path.getFileName().toString());
 		} catch (IOException e) {
-			throw new FileSystemException("An I/O error occurred when retrieving the Topics", e,
+			throw new FileSystemException("An IO error occurred when retrieving the Topics", e,
 					topicsRootDirectory);
 		}
 	}
@@ -229,7 +229,7 @@ public final class TopicFileSystem implements ITopicDAO {
 		try {
 			Files.createFile(pathForPost);
 		} catch (IOException e) {
-			throw new FileSystemException("An I/O error occurred when creating a File", e,
+			throw new FileSystemException("An IO error occurred when creating a File", e,
 					pathForPost);
 		}
 	}
@@ -238,7 +238,7 @@ public final class TopicFileSystem implements ITopicDAO {
 		try {
 			return Files.readAllBytes(head);
 		} catch (IOException e) {
-			throw new FileSystemException("An I/O error occurred when reading from a File", e,
+			throw new FileSystemException("An IO error occurred when reading from a File", e,
 					head);
 		}
 	}
@@ -247,7 +247,7 @@ public final class TopicFileSystem implements ITopicDAO {
 		try {
 			Files.write(pointerToNextPost, data);
 		} catch (IOException e) {
-			throw new FileSystemException("An I/O error occurred when writing to a File", e,
+			throw new FileSystemException("An IO error occurred when writing to a File", e,
 					pointerToNextPost);
 		}
 	}

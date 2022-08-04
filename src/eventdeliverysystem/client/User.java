@@ -301,28 +301,28 @@ public final class User {
 		void fireEvent(UserEvent e) {
 			switch (e.tag) {
 			case MESSAGE_SENT:
-				User.this.listener.onMessageSent(e);
+				listener.onMessageSent(e);
 				break;
 			case MESSAGE_RECEIVED:
-				User.this.listener.onMessageReceived(e);
+				listener.onMessageReceived(e);
 				break;
 			case TOPIC_CREATED:
-				User.this.listener.onTopicCreated(e);
+				listener.onTopicCreated(e);
 				break;
 			case TOPIC_DELETED:
-				User.this.listener.onTopicDeleted(e);
+				listener.onTopicDeleted(e);
 				break;
 			case SERVER_TOPIC_DELETED:
-				User.this.listener.onServerTopicDeleted(e);
+				listener.onServerTopicDeleted(e);
 				break;
 			case TOPIC_LISTENED:
-				User.this.listener.onTopicListened(e);
+				listener.onTopicListened(e);
 				break;
 			case TOPIC_LOADED:
-				User.this.listener.onTopicLoaded(e);
+				listener.onTopicLoaded(e);
 				break;
 			case TOPIC_LISTEN_STOPPED:
-				User.this.listener.onTopicListenStopped(e);
+				listener.onTopicListenStopped(e);
 				break;
 			default:
 				throw new IllegalArgumentException(
@@ -335,61 +335,61 @@ public final class User {
 
 		private final Set<UserListener> listeners = new HashSet<>();
 
-		final void addListener(UserListener l) {
+		void addListener(UserListener l) {
 			listeners.add(l);
 		}
 
 		@Override
-		public final void onMessageSent(UserEvent e) {
+		public void onMessageSent(UserEvent e) {
 			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onMessageSent(e));
 		}
 
 		@Override
-		public final void onMessageReceived(UserEvent e) {
+		public void onMessageReceived(UserEvent e) {
 			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onMessageReceived(e));
 		}
 
 		@Override
-		public final void onTopicCreated(UserEvent e) {
+		public void onTopicCreated(UserEvent e) {
 			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onTopicCreated(e));
 		}
 
 		@Override
-		public final void onTopicDeleted(UserEvent e) {
+		public void onTopicDeleted(UserEvent e) {
 			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onTopicDeleted(e));
 		}
 
 		@Override
-		public final void onServerTopicDeleted(UserEvent e) {
+		public void onServerTopicDeleted(UserEvent e) {
 			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onServerTopicDeleted(e));
 		}
 
 		@Override
-		public final void onTopicListened(UserEvent e) {
+		public void onTopicListened(UserEvent e) {
 			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onTopicListened(e));
 		}
 
 		@Override
-		public final void onTopicLoaded(UserEvent e) {
+		public void onTopicLoaded(UserEvent e) {
 			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onTopicLoaded(e));
 		}
 
 		@Override
-		public final void onTopicListenStopped(UserEvent e) {
+		public void onTopicListenStopped(UserEvent e) {
 			CompositeListener.log(e);
 
 			listeners.forEach(l -> l.onTopicListenStopped(e));
@@ -457,7 +457,7 @@ public final class User {
 				try {
 					profileDao.createTopicForCurrentProfile(e.topicName);
 				} catch (IOException e1) {
-					User.this.userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
+					userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
 				}
 			} else {
 				e.getCause().printStackTrace();
@@ -487,7 +487,7 @@ public final class User {
 			try {
 				profileDao.deleteTopicFromCurrentProfile(e.topicName);
 			} catch (IOException e1) {
-				User.this.userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
+				userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
 			}
 		}
 	}

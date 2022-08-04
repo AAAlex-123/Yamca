@@ -64,7 +64,7 @@ public final class ProfileFileSystem implements IProfileDAO {
 			Files.createDirectory(topicsDirectory);
 		} catch (IOException e) {
 			throw new FileSystemException(
-					"An I/O error occurred when creating Profile " + profileName, e,
+					"An IO error occurred when creating Profile " + profileName, e,
 					topicsDirectory);
 		}
 
@@ -102,7 +102,7 @@ public final class ProfileFileSystem implements IProfileDAO {
 			return Files.list(profilesRootDirectory).filter(Files::isDirectory)
 			            .map(path -> path.getFileName().toString());
 		} catch (IOException e) {
-			throw new FileSystemException("An I/O error occurred when retrieving the Profiles", e,
+			throw new FileSystemException("An IO error occurred when retrieving the Profiles", e,
 					profilesRootDirectory);
 		}
 	}

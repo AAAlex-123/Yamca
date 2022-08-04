@@ -77,6 +77,7 @@ final class CrappyUserUI extends JFrame {
 		}
 	}
 
+	@SuppressWarnings("TransientFieldNotInitialized")
 	private final transient User user;
 
 	/**
@@ -109,7 +110,7 @@ final class CrappyUserUI extends JFrame {
 		addOtherPanel(main);
 		add(main);
 
-		this.pack();
+		pack();
 	}
 
 	private void addPostPanel(JPanel origin) {
@@ -120,7 +121,7 @@ final class CrappyUserUI extends JFrame {
 
 		JButton[] buttons = new JButton[2];
 		createButton("File", e -> {
-			final User user1 = CrappyUserUI.this.user;
+			final User user1 = user;
 			final File file = new File(jtfs[0].getText());
 			final String posterName = user1.getCurrentProfileName();
 			tryPST(() -> {
@@ -130,7 +131,7 @@ final class CrappyUserUI extends JFrame {
 		}, buttons, 0);
 
 		createButton("Text", e -> {
-			final User user1 = CrappyUserUI.this.user;
+			final User user1 = user;
 			final String text = jtfs[0].getText();
 			final String posterName = user1.getCurrentProfileName();
 			final Post post = Post.fromText(text, posterName);
