@@ -21,28 +21,3 @@
 # App files
 users/
 assets/
-
-# copy-pasted from antother android studio project
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/.name
-/.idea/assetWizardSettings.xml
-/.idea/compiler.xml
-/.idea/gradle.xml
-/.idea/markdown-navigator.xml
-/.idea/markdown-navigator-enh.xml
-/.idea/misc.xml
-/.idea/modules.xml
-/.idea/navEditor.xml
-/.idea/vcs.xml
-/.idea/workspace.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-
