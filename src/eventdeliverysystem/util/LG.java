@@ -1,11 +1,13 @@
 package eventdeliverysystem.util;
 
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 /**
- * A logger that prints output and debug messages to standard out.
+ * A logger that logs debug and error messages, as well as exceptions.
  *
  * @author Alex Mandelias
  */
@@ -13,8 +15,8 @@ public final class LG {
 
 	/**
 	 * Sets the Logger's Output stream. All calls other than `LG.err` use this stream. This method
-	 * must be called before attempting to log anything, or a {@code NullPointerException} will be
-	 * thrown.
+	 * must be called before attempting to log anything to the output stream, or a
+	 * {@code NullPointerException} will be thrown.
 	 *
 	 * @param out the output stream to use
 	 *
@@ -29,8 +31,8 @@ public final class LG {
 	}
 
 	/**
-	 * Sets the Logger's Error stream. All calls to `LG.err` use this stream. This method must be
-	 * called before attempting to log anything, or a {@code NullPointerException} will be thrown.
+	 * Sets the Logger's Error stream. This method must be called before attempting to log anything
+	 * to the error stream, or a {@code NullPointerException} will be thrown.
 	 *
 	 * @param err the error stream to use
 	 *
@@ -45,8 +47,23 @@ public final class LG {
 	}
 
 	/**
-	 * Prints {@code String.format(format + "\n", args)} to {@code System.out} ignoring the current
-	 * indentation level
+	 * Sets the Logger's tab size, which is used for indentation. Defaults to 4.
+	 *
+	 * @param tabSize the number of spaces for each level of indentation
+	 *
+	 * @throws IllegalArgumentException if {@code tabSize < 0}
+	 */
+	public static void setTabSize(int tabSize) {
+		if (tabSize < 0) {
+			throw new IllegalArgumentException("tabSize can't be negative");
+		}
+
+		LG.tabSize = tabSize;
+	}
+
+	/**
+	 * Prints {@code String.format(format + "\n", args)} to the stream specified by `setOut`,
+	 * ignoring the current indentation level.
 	 *
 	 * @param format A format string
 	 * @param args Arguments referenced by the format specifiers in the format string.
@@ -58,8 +75,8 @@ public final class LG {
 	}
 
 	/**
-	 * Prints {@code String.format(format + "\n", args)} to {@code System.out} according to the
-	 * current indentation level
+	 * Prints {@code String.format(format + "\n", args)} to the stream specified by `setOut`,
+	 * according to the current indentation level.
 	 *
 	 * @param format A format string
 	 * @param args Arguments referenced by the format specifiers in the format string.
@@ -67,16 +84,16 @@ public final class LG {
 	 * @throws NullPointerException if `setOut` has not been called prior to this call
 	 */
 	public static void sout(String format, Object... args) {
-		for (int i = 0; i < LG.tab; i++) {
-			toOut("\t");
+		for (int i = 0; i < tab * tabSize; i++) {
+			toOut(" ");
 		}
 
 		toOut(String.format("%s%n", format), args);
 	}
 
 	/**
-	 * Prints {@code String.format("ERROR: " + format + "\n", args)} to {@code System.err} ignoring
-	 * the current indentation level
+	 * Prints {@code String.format("ERROR: " + format + "\n", args)} to the stream specified by
+	 * `setErr`, ignoring the current indentation level.
 	 *
 	 * @param format A format string
 	 * @param args Arguments referenced by the format specifiers in the format string.
@@ -85,6 +102,17 @@ public final class LG {
 	 */
 	public static void err(String format, Object... args) {
 		toErr(String.format("ERROR: %s%n", format), args);
+	}
+
+	/**
+	 * Prints a throwable and its backtrace to the stream specified by `setErr`.
+	 *
+	 * @param throwable the throwable
+	 */
+	public static void exception(Throwable throwable) {
+		StringWriter sw = new StringWriter();
+		throwable.printStackTrace(new PrintWriter(sw));
+		toErr(sw.toString());
 	}
 
 	/** Adds a level of indentation to all future prints */
@@ -158,6 +186,7 @@ public final class LG {
 	private static PrintStream out = null;
 	private static PrintStream err = null;
 	private static int tab = 0;
+	private static int tabSize = 4;
 
 	private LG() {}
 }

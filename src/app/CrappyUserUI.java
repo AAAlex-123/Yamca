@@ -19,6 +19,7 @@ import eventdeliverysystem.client.UserAdapter;
 import eventdeliverysystem.client.UserEvent;
 import eventdeliverysystem.dao.IProfileDAO;
 import eventdeliverysystem.datastructures.Post;
+import eventdeliverysystem.util.LG;
 
 /**
  * Imitates the functionality of the android app.
@@ -73,7 +74,7 @@ final class CrappyUserUI extends JFrame {
 		try {
 			r.run();
 		} catch (IOException e) {
-			e.printStackTrace();
+			LG.exception(e);
 		}
 	}
 

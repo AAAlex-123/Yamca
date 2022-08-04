@@ -407,8 +407,7 @@ public final class User {
 			if (e.success) {
 				// do nothing
 			} else {
-				LG.sout("MESSAGE FAILED TO SEND AT '%s'", e.topicName);
-				e.getCause().printStackTrace();
+				LG.exception(e.getCause());
 			}
 		}
 
@@ -417,9 +416,8 @@ public final class User {
 			if (e.success) {
 				String topicName = e.topicName;
 				currentProfile.markUnread(topicName);
-				LG.sout("YOU HAVE A NEW MESSAGE AT '%s'", topicName);
 			} else {
-				e.getCause().printStackTrace();
+				LG.exception(e.getCause());
 			}
 		}
 
@@ -428,7 +426,7 @@ public final class User {
 			if (e.success) {
 				listenForNewTopic(e.topicName);
 			} else {
-				e.getCause().printStackTrace();
+				LG.exception(e.getCause());
 			}
 		}
 
@@ -437,7 +435,7 @@ public final class User {
 			if (e.success) {
 				removeTopicLocally(e);
 			} else {
-				e.getCause().printStackTrace();
+				LG.exception(e.getCause());
 			}
 		}
 
@@ -446,7 +444,7 @@ public final class User {
 			if (e.success) {
 				// do nothing
 			} else {
-				e.getCause().printStackTrace();
+				LG.exception(e.getCause());
 			}
 		}
 
@@ -460,7 +458,7 @@ public final class User {
 					userStub.fireEvent(UserEvent.failed(e.tag, e.topicName, e1));
 				}
 			} else {
-				e.getCause().printStackTrace();
+				LG.exception(e.getCause());
 			}
 		}
 
@@ -469,7 +467,7 @@ public final class User {
 			if (e.success) {
 				// do nothing
 			} else {
-				e.getCause().printStackTrace();
+				LG.exception(e.getCause());
 			}
 		}
 
@@ -478,7 +476,7 @@ public final class User {
 			if (e.success) {
 				removeTopicLocally(e);
 			} else {
-				e.getCause().printStackTrace();
+				LG.exception(e.getCause());
 			}
 		}
 

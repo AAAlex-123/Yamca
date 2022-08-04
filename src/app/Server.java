@@ -60,6 +60,7 @@ final class Server {
 	public static void main(String[] args) {
 		LG.setOut(System.out);
 		LG.setErr(System.err);
+		LG.setTabSize(4);
 
 		LG.args(args);
 
@@ -135,7 +136,7 @@ final class Server {
 					crs.close();
 				} catch (IOException e1) {
 					LG.err("Error while closing the server sockets");
-					e1.printStackTrace();
+					LG.exception(e1);
 				}
 			}
 			return;
@@ -154,7 +155,7 @@ final class Server {
 			System.exit(1);
 		} catch (IOException e) {
 			LG.err("IO error associated with path %s", path);
-			e.printStackTrace();
+			LG.exception(e);
 		}
 	}
 }

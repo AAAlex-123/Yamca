@@ -57,6 +57,7 @@ final class Client {
 	public static void main(String[] args) {
 		LG.setOut(System.out);
 		LG.setErr(System.err);
+		LG.setTabSize(4);
 
 		LG.args(args);
 
@@ -130,7 +131,7 @@ final class Client {
 		} catch (final IOException e) {
 			LG.err("There was an IO error either while interacting with the file system or"
 			       + " connecting to the server");
-			e.printStackTrace();
+			LG.exception(e);
 			return;
 		}
 		ui.setVisible(true);

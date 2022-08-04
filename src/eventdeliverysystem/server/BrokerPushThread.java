@@ -63,7 +63,7 @@ final class BrokerPushThread extends Thread implements Subscriber {
 				try {
 					oos.close();
 				} catch (IOException e1) {
-					e1.printStackTrace();
+					LG.exception(e1);
 				}
 				Thread.currentThread().interrupt();
 			}

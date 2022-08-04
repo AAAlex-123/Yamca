@@ -118,7 +118,7 @@ public final class Broker implements Runnable, AutoCloseable {
 					new ClientRequestHandler(socket).start();
 				}
 			} catch (final IOException e) {
-				e.printStackTrace();
+				LG.exception(e);
 			}
 			LG.sout("#ClientRequestThread#run()");
 		}, "Client Request Thread");
@@ -132,7 +132,7 @@ public final class Broker implements Runnable, AutoCloseable {
 					new BrokerRequestHandler(socket).start();
 				}
 			} catch (final IOException e) {
-				e.printStackTrace();
+				LG.exception(e);
 			}
 			LG.sout("#BrokerRequestThread#run()");
 		}, "Broker Request Thread");
@@ -154,7 +154,7 @@ public final class Broker implements Runnable, AutoCloseable {
 				brokerSocket.close();
 			}
 		} catch (final IOException e) {
-			e.printStackTrace();
+			LG.exception(e);
 		}
 	}
 
@@ -290,7 +290,7 @@ public final class Broker implements Runnable, AutoCloseable {
 				final String end = "#%s '%s'";
 				LG.sout(end, message.getType(), topicName);
 			} catch (final IOException | ClassNotFoundException e) {
-				e.printStackTrace();
+				LG.exception(e);
 			}
 
 			LG.out();
@@ -319,7 +319,7 @@ public final class Broker implements Runnable, AutoCloseable {
 				btm.removeTopic(topicName);
 				return true;
 			} catch (IOException e) {
-				e.printStackTrace();
+				LG.exception(e);
 			} catch (NoSuchElementException e) {
 				// do nothing specific to NoSuchElementException
 				// should never occur
@@ -387,11 +387,11 @@ public final class Broker implements Runnable, AutoCloseable {
 				LG.sout("brokerCIForClient=%s", brokerCIForClient);
 				brokerCI.add(brokerCIForClient);
 			} catch (ClassNotFoundException | IOException e) {
-				e.printStackTrace();
+				LG.exception(e);
 				try {
 					socket.close();
 				} catch (IOException e1) {
-					e1.printStackTrace();
+					LG.exception(e1);
 				}
 			}
 		}

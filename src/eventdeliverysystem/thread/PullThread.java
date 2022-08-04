@@ -80,15 +80,11 @@ public final class PullThread extends Thread {
 				callback.onCompletion(true, topic.getName(), null);
 			}
 		} catch (final EOFException | SocketException e) {
-			LG.sout("EOF/SOCKET EXCEPTION ON PULL THREAD");
-			e.printStackTrace();
-
 			if (callback != null) {
 				callback.onCompletion(true, topic.getName(), e);
 			}
 		} catch (final ClassNotFoundException | IOException e) {
-			LG.err("IOException in PullThread#run()");
-			e.printStackTrace();
+			LG.exception(e);
 
 			if (callback != null) {
 				callback.onCompletion(false, topic.getName(), e);
