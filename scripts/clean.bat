@@ -1,1 +1,3 @@
-IF EXIST "bin" RMDIR /S /Q "bin"
+SET scriptpath=%~dp0
+
+IF EXIST %scriptpath%..\bin RMDIR /S /Q %scriptpath%..\bin

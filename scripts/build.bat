@@ -1,7 +1,9 @@
-CMD /C .\clean.bat
+SET scriptpath=%~dp0
 
-DIR /B /S src\*.java > .java_files
+CMD /C %scriptpath%clean.bat
 
-javac -d bin -g:none --release 8 @.java_files
+DIR /B /S %scriptpath%..\src\*.java > %scriptpath%..\.java_files
 
-DEL .java_files
+javac -d %scriptpath%..\bin -g:none --release 8 @.java_files
+
+DEL %scriptpath%..\.java_files

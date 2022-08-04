@@ -41,11 +41,11 @@ final class Client {
 	        + "\t-f\tread connection configuration from file" + LINE_SEP
 	        + LINE_SEP
 	        + "Where:" + LINE_SEP
-	        + "\t<ip>\t\tthe ip of the server" + LINE_SEP
-	        + "\t<port>\t\tthe port the server listens to (See 'Client Port' in the server console)"
-	                                    + LINE_SEP
-	        + "\t<path>\t\tthe file with the configuration\t<user_dir>\tthe directory in the file"
-	                                    + " system to store the data";
+	        + "\t<ip>          the ip of the server" + LINE_SEP
+	        + "\t<port>        the port the server listens to (See 'Client Port' in the server"
+										+ " console)" + LINE_SEP
+	        + "\t<path>        the file with the configuration" + LINE_SEP
+			+ "\t<user_dir>    the directory in the file system to store the data";
 
 	private Client() {}
 

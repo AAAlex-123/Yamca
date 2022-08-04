@@ -39,13 +39,15 @@ final class Server {
 	        + LINE_SEP
 	        + "Options:" + LINE_SEP
 	        + "\t-f\tread connection configuration from file" + LINE_SEP
+	        + LINE_SEP
 	        + "Where:" + LINE_SEP
-	        + "\t<broker_dir>\t\t the directory where the topics will be saved for this server"
+	        + "\t<broker_dir>    the directory where the topics will be saved for this server"
 	                                    + LINE_SEP
-	        + "\t<ip>\t\tthe ip of the first server (run `ipconfig` on the first server)" + LINE_SEP
-	        + "\t<port>\t\tthe port the first server listens to (See 'Broker Port' in the first"
-	                                    + " server's console)" + LINE_SEP
-	        + "\t<path>\t\tthe file with the configuration";
+	        + "\t<ip>            the ip of the first server (run `ipconfig` on the first server)"
+			                            + LINE_SEP
+	        + "\t<port>          the port the first server listens to (See 'Broker Port' in the"
+										+ " first server's console)" + LINE_SEP
+	        + "\t<path>          the file with the configuration";
 
 	private Server() {}
 
