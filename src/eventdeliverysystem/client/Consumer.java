@@ -84,7 +84,7 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		topicManager.close();
 
 		for (final UserTopic userTopic : newUserTopics) {
-			listenForTopic(userTopic, true);
+			listenForTopic(new UserTopic(userTopic), true);
 		}
 	}
 
@@ -218,8 +218,8 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		 * @throws NoSuchElementException if this Manager doesn't have a Topic with the given
 		 * 		name
 		 */
-		void removeSocket(String topicName) throws IOException, NoSuchElementException {
-			LG.sout("TopicManager#removeSocket(%s)", topicName);
+		void closeAndRemoveSocket(String topicName) throws IOException, NoSuchElementException {
+			LG.sout("TopicManager#closeAndRemoveSocket(%s)", topicName);
 			if (!tdMap.containsKey(topicName)) {
 				throw new NoSuchElementException(ClientNode.getTopicDNEString(topicName));
 			}
@@ -229,10 +229,28 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 			tdMap.remove(topicName);
 		}
 
+		/**
+		 * Removes a Topic from this Manager.
+		 *
+		 * @param topicName the name of the Topic to remove
+		 *
+		 * @throws NoSuchElementException if this Manager doesn't have a Topic with the given
+		 * 		name
+		 */
+		void removeClosedSocket(String topicName) throws NoSuchElementException {
+			LG.sout("TopicManager#removeClosedSocket(%s)", topicName);
+			if (!tdMap.containsKey(topicName)) {
+				throw new NoSuchElementException(ClientNode.getTopicDNEString(topicName));
+			}
+
+			tdMap.remove(topicName);
+		}
+
+
 		@Override
 		public void close() throws ServerException {
 			try {
-				for (final TopicManager.TopicData td : tdMap.values()) {
+				for (final TopicData td : tdMap.values()) {
 					td.socket.close();
 				}
 			} catch (IOException e) {
@@ -274,11 +292,13 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 				throw new ServerException(ClientNode.getTopicDNEString(topicName));
 			}
 
+			topicManager.addSocket(userTopic, socket);
+
 			final Thread pullThread =
 					new PullThread(ois, userTopic, (cbSuccess, cbTopicName, cbCause) -> {
 						if (cbSuccess) {
-							topicManager.addSocket(userTopic, socket);
 							if (cbCause instanceof EOFException) {
+								topicManager.removeClosedSocket(cbTopicName);
 								userStub.fireEvent(
 										UserEvent.successful(Tag.TOPIC_DELETED, cbTopicName));
 							} else if (cbCause instanceof SocketException) {
@@ -316,11 +336,13 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 				throw new ServerException(ClientNode.getTopicDNEString(topicName));
 			}
 
+			topicManager.addSocket(userTopic, socket);
+
 			final Thread pullThread =
 					new PullThread(ois, userTopic, (cbSuccess, cbTopicName, cbCause) -> {
 						if (cbSuccess) {
-							topicManager.addSocket(userTopic, socket);
 							if (cbCause instanceof EOFException) {
+								topicManager.removeClosedSocket(cbTopicName);
 								userStub.fireEvent(
 										UserEvent.successful(Tag.TOPIC_DELETED, cbTopicName));
 							} else if (cbCause instanceof SocketException) {
@@ -351,7 +373,7 @@ final class Consumer extends ClientNode implements AutoCloseable, Subscriber {
 		@Override
 		public void run() {
 			try {
-				Consumer.this.topicManager.removeSocket(topicName);
+				topicManager.closeAndRemoveSocket(topicName);
 			} catch (NoSuchElementException | IOException e) {
 				userStub.fireEvent(UserEvent.failed(eventTag, topicName, e));
 			}
